@@ -204,5 +204,111 @@ describe('Browser Extension - Integration Tests', () => {
 			expect(hasIsInstalled).toBe(true);
 			expect(hasRegisterWallet).toBe(true);
 		});
+
+		test('should verify DCWS.isInstalled returns true', async () => {
+			const testPagePath = join(__dirname, '..', 'test-wallet-api.html');
+			await page.goto(`file://${testPagePath}`);
+
+			await new Promise((resolve) => setTimeout(resolve, 1000));
+
+			const isInstalled = await page.evaluate(() => {
+				return (window as { DCWS?: { isInstalled?: () => boolean } }).DCWS?.isInstalled?.();
+			});
+
+			expect(isInstalled).toBe(true);
+		});
+
+		test('should successfully register wallet via DCWS.registerWallet', async () => {
+			const testPagePath = join(__dirname, '..', 'test-wallet-api.html');
+			await page.goto(`file://${testPagePath}`);
+
+			await new Promise((resolve) => setTimeout(resolve, 1000));
+
+			type RegisterResult = { success: boolean; wallet?: { id: string; name: string; url: string }; alreadyRegistered?: boolean };
+
+			const result = await page.evaluate(async () => {
+				const DCWS = (window as { DCWS?: { registerWallet?: (info: unknown) => Promise<RegisterResult> } }).DCWS;
+				if (!DCWS?.registerWallet) return null;
+
+				return await DCWS.registerWallet({
+					name: 'E2E Test Wallet',
+					url: 'https://e2e-test-wallet.example.com',
+					protocols: ['openid4vp'],
+					description: 'Integration test wallet',
+				});
+			});
+
+			expect(result).not.toBeNull();
+			expect(result?.success).toBe(true);
+			expect(result?.wallet).toBeDefined();
+			expect(result?.wallet?.name).toBe('E2E Test Wallet');
+		});
+
+		test('should detect duplicate wallet registration', async () => {
+			const testPagePath = join(__dirname, '..', 'test-wallet-api.html');
+			await page.goto(`file://${testPagePath}`);
+
+			await new Promise((resolve) => setTimeout(resolve, 1000));
+
+			type RegisterResult = { success: boolean; alreadyRegistered?: boolean };
+
+			// First registration
+			await page.evaluate(async () => {
+				const DCWS = (window as { DCWS?: { registerWallet?: (info: unknown) => Promise<RegisterResult> } }).DCWS;
+				if (!DCWS?.registerWallet) return null;
+
+				return await DCWS.registerWallet({
+					name: 'Duplicate Test Wallet',
+					url: 'https://duplicate-test.example.com',
+					protocols: ['openid4vp'],
+				});
+			});
+
+			// Second registration with same URL
+			const result = await page.evaluate(async () => {
+				const DCWS = (window as { DCWS?: { registerWallet?: (info: unknown) => Promise<RegisterResult> } }).DCWS;
+				if (!DCWS?.registerWallet) return null;
+
+				return await DCWS.registerWallet({
+					name: 'Duplicate Test Wallet',
+					url: 'https://duplicate-test.example.com',
+					protocols: ['openid4vp'],
+				});
+			});
+
+			expect(result?.success).toBe(true);
+			expect(result?.alreadyRegistered).toBe(true);
+		});
+
+		test('should verify wallet is registered via DCWS.isWalletRegistered', async () => {
+			const testPagePath = join(__dirname, '..', 'test-wallet-api.html');
+			await page.goto(`file://${testPagePath}`);
+
+			await new Promise((resolve) => setTimeout(resolve, 1000));
+
+			type RegisterResult = { success: boolean };
+
+			// Register a wallet first
+			await page.evaluate(async () => {
+				const DCWS = (window as { DCWS?: { registerWallet?: (info: unknown) => Promise<RegisterResult> } }).DCWS;
+				if (!DCWS?.registerWallet) return null;
+
+				return await DCWS.registerWallet({
+					name: 'Verification Test Wallet',
+					url: 'https://verify-test.example.com',
+					protocols: ['openid4vp'],
+				});
+			});
+
+			// Check if it's registered
+			const isRegistered = await page.evaluate(async () => {
+				const DCWS = (window as { DCWS?: { isWalletRegistered?: (url: string) => Promise<boolean> } }).DCWS;
+				if (!DCWS?.isWalletRegistered) return null;
+
+				return await DCWS.isWalletRegistered('https://verify-test.example.com');
+			});
+
+			expect(isRegistered).toBe(true);
+		});
 	});
 });

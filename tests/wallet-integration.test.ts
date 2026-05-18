@@ -1,7 +1,7 @@
 /**
  * Mock Wallet Integration Tests
  *
- * Tests wallet auto-registration and JWT verification using a mock wallet fixture.
+ * Tests mock wallet registration flows and related error handling using a mock wallet fixture.
  * Uses Puppeteer to load the mock wallet in a browser with the extension installed.
  */
 
