@@ -3,15 +3,14 @@
  * Intercepts navigator.credentials.get() calls for the Digital Credentials API
  */
 
-import {
-	type Wallet,
-	type WalletRegistrationInput,
-	WalletRegistrationInputSchema,
-} from '@shared/schemas/resources';
-import { parse } from 'valibot';
+import type { Wallet } from '@shared/schemas/resources';
+import { WalletCompanion } from './api/WalletCompanion';
 import { OpenID4VPPlugin, ProtocolPluginRegistry } from './protocols/';
 
-console.log('Digital Credentials API interceptor injected');
+console.debug('Digital Credentials API interceptor injected');
+
+// Create the public API instance
+const walletCompanion = new WalletCompanion();
 
 // Store the original navigator.credentials.get
 const originalCredentialsGet = navigator.credentials.get.bind(navigator.credentials);
@@ -28,17 +27,9 @@ let requestIdCounter = 0;
 // Store pending requests
 const pendingRequests = new Map();
 
-// Cache of supported protocols (updated when wallets register)
-let supportedProtocols = new Set();
-
 // Initialize protocol plugin registry and register plugins
 const protocolRegistry = new ProtocolPluginRegistry();
 protocolRegistry.register(new OpenID4VPPlugin());
-
-// Store wallet-provided callbacks
-const walletCallbacks = {
-	jwtVerifiers: new Map(), // Maps wallet URL -> JWT verification function
-};
 
 /**
  * Override DigitalCredential.userAgentAllowsProtocol
@@ -47,7 +38,7 @@ const walletCallbacks = {
 if (typeof DigitalCredential !== 'undefined') {
 	DigitalCredential.userAgentAllowsProtocol = (protocol) => {
 		// Check if any registered web wallet supports this protocol
-		if (supportedProtocols.has(protocol)) {
+		if (walletCompanion.supportedProtocols.includes(protocol)) {
 			return true;
 		}
 
@@ -60,43 +51,6 @@ if (typeof DigitalCredential !== 'undefined') {
 	};
 	console.log('DigitalCredential.userAgentAllowsProtocol overridden');
 }
-
-/**
- * Update supported protocols cache from extension
- */
-async function updateSupportedProtocols() {
-	return new Promise<void>((resolve) => {
-		const updateId = `protocols-update-${Date.now()}`;
-
-		const responseHandler = (event: Event) => {
-			const { detail } = event as CustomEvent;
-			if (detail.updateId === updateId) {
-				window.removeEventListener('DC_PROTOCOLS_UPDATE_RESPONSE', responseHandler);
-				if (detail.protocols) {
-					supportedProtocols = new Set(detail.protocols);
-					console.log('Updated supported protocols:', Array.from(supportedProtocols));
-				}
-				resolve();
-			}
-		};
-
-		window.addEventListener('DC_PROTOCOLS_UPDATE_RESPONSE', responseHandler);
-
-		window.dispatchEvent(
-			new CustomEvent('DC_PROTOCOLS_UPDATE_REQUEST', {
-				detail: { updateId: updateId },
-			}),
-		);
-
-		setTimeout(() => {
-			window.removeEventListener('DC_PROTOCOLS_UPDATE_RESPONSE', responseHandler);
-			resolve();
-		}, 1000);
-	});
-}
-
-// Update protocols on load
-updateSupportedProtocols();
 
 type DigitalIdentityRequest = {
 	identity?: boolean;
@@ -139,9 +93,11 @@ navigator.credentials.get = async (options?: CredentialRequestOptions & DigitalI
 	}
 
 	// Filter requests by supported protocols
-	const supportedRequests = digitalRequests.filter((req) => supportedProtocols.has(req.protocol));
+	const supportedRequests = digitalRequests.filter((req) =>
+		walletCompanion.supportedProtocols.includes(req.protocol),
+	);
 	const unsupportedRequests = digitalRequests.filter(
-		(req) => !supportedProtocols.has(req.protocol),
+		(req) => !walletCompanion.supportedProtocols.includes(req.protocol),
 	);
 
 	// If no requests match our supported protocols, pass through to native
@@ -418,186 +374,8 @@ function buildWalletUrl(wallet: Wallet, protocol: string, request: any) {
 	return url.toString();
 }
 
-console.log('Digital Credentials API interception active');
+console.debug('Digital Credentials API interception active');
 
-/**
- * Wallet Auto-Registration API
- * Allows wallets to detect the extension and register themselves
- */
+window.WalletCompanion = walletCompanion;
 
-// Expose a namespace for the extension API
-window.DigitalCredentialsWalletSelector = {
-	version: '1.0.0',
-
-	/**
-	 * Check if the extension is installed
-	 * @returns {boolean} True if extension is installed
-	 */
-	isInstalled: (): boolean => true,
-
-	/**
-	 * Register a wallet with the extension
-	 */
-	registerWallet: async (walletInfo: WalletRegistrationInput) => {
-		if (!walletInfo?.name || !walletInfo.url) {
-			throw new Error('Wallet registration requires at least name and url');
-		}
-
-		if (
-			!walletInfo.protocols ||
-			!Array.isArray(walletInfo.protocols) ||
-			walletInfo.protocols.length === 0
-		) {
-			throw new Error('Wallet registration requires at least one supported protocol');
-		}
-
-		// Validate URL
-		try {
-			new URL(walletInfo.url);
-		} catch (_e) {
-			throw new Error(`Invalid wallet URL: ${walletInfo.url}`);
-		}
-
-		// Validate protocol identifiers (must be ASCII lower alpha, digits, and hyphens)
-		const protocolPattern = /^[a-z0-9-]+$/;
-		for (const protocol of walletInfo.protocols) {
-			if (!protocolPattern.test(protocol)) {
-				throw new Error(
-					'Invalid protocol identifier: ' +
-						protocol +
-						' (must contain only lowercase letters, digits, and hyphens)',
-				);
-			}
-		}
-
-		const walletRegistration = parse(WalletRegistrationInputSchema, walletInfo);
-
-		// Send registration request to extension
-		return new Promise((resolve, reject) => {
-			const registrationId = `wallet-reg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-			// Listen for response
-			const responseHandler = (event: Event) => {
-				const { detail } = event as CustomEvent;
-				if (detail.registrationId === registrationId) {
-					window.removeEventListener('DC_WALLET_REGISTRATION_RESPONSE', responseHandler);
-
-					if (detail.success) {
-						resolve({
-							success: true,
-							alreadyRegistered: detail.alreadyRegistered,
-							wallet: detail.wallet,
-						});
-					} else {
-						reject(new Error(detail.error || 'Registration failed'));
-					}
-				}
-			};
-
-			window.addEventListener('DC_WALLET_REGISTRATION_RESPONSE', responseHandler);
-
-			// Dispatch registration request
-			window.dispatchEvent(
-				new CustomEvent('DC_WALLET_REGISTRATION_REQUEST', {
-					detail: {
-						registrationId: registrationId,
-						wallet: walletRegistration, // WalletRegistrationInput
-						registeredFrom: window.location.origin, // only available here in page context
-					},
-				}),
-			);
-
-			// Timeout after 5 seconds
-			setTimeout(() => {
-				window.removeEventListener('DC_WALLET_REGISTRATION_RESPONSE', responseHandler);
-				reject(new Error('Registration timeout'));
-			}, 5000);
-		});
-	},
-
-	/**
-	 * Check if a wallet is already registered
-	 * @param {string} url - Wallet URL to check
-	 * @returns {Promise<boolean>} True if wallet is registered
-	 */
-	isWalletRegistered: async (url) =>
-		new Promise((resolve, reject) => {
-			const checkId = `wallet-check-${Date.now()}`;
-
-			const responseHandler = (event: Event) => {
-				const { detail } = event as CustomEvent<{ checkId: string; isRegistered: boolean }>;
-				if (detail.checkId === checkId) {
-					window.removeEventListener('DC_WALLET_CHECK_RESPONSE', responseHandler);
-					resolve(detail.isRegistered);
-				}
-			};
-
-			window.addEventListener('DC_WALLET_CHECK_RESPONSE', responseHandler);
-
-			window.dispatchEvent(
-				new CustomEvent('DC_WALLET_CHECK_REQUEST', {
-					detail: {
-						checkId: checkId,
-						url: url,
-					},
-				}),
-			);
-
-			setTimeout(() => {
-				window.removeEventListener('DC_WALLET_CHECK_RESPONSE', responseHandler);
-				reject(new Error('Check timeout'));
-			}, 5000);
-		}),
-
-	/**
-	 * Register a JWT verification callback for protocol operations
-	 * Allows wallets to provide their own JWT verification logic
-	 * @param {string} walletUrl - The URL of the wallet providing the verifier
-	 * @param {Function} verifyCallback - Async function that verifies JWT
-	 *   Signature: async (jwt, options) => { valid: boolean, payload?: any, error?: string }
-	 *   - jwt: string - The JWT to verify
-	 *   - options: { publicKey?: string, certificate?: string, algorithm?: string }
-	 * @returns {boolean} Success status
-	 */
-	registerJWTVerifier: (walletUrl, verifyCallback) => {
-		if (typeof verifyCallback !== 'function') {
-			throw new Error('JWT verifier must be a function');
-		}
-
-		try {
-			// Validate wallet URL
-			new URL(walletUrl);
-		} catch (_e) {
-			throw new Error(`Invalid wallet URL: ${walletUrl}`);
-		}
-
-		walletCallbacks.jwtVerifiers.set(walletUrl, verifyCallback);
-		console.log(`JWT verifier registered for wallet: ${walletUrl}`);
-		return true;
-	},
-
-	/**
-	 * Unregister a JWT verification callback
-	 * @param {string} walletUrl - The URL of the wallet
-	 * @returns {boolean} True if a verifier was removed
-	 */
-	unregisterJWTVerifier: (walletUrl) => {
-		const removed = walletCallbacks.jwtVerifiers.delete(walletUrl);
-		if (removed) {
-			console.log(`JWT verifier unregistered for wallet: ${walletUrl}`);
-		}
-		return removed;
-	},
-
-	/**
-	 * Get list of wallets that have registered JWT verifiers
-	 * @returns {string[]} Array of wallet URLs
-	 */
-	getRegisteredJWTVerifiers: () => Array.from(walletCallbacks.jwtVerifiers.keys()),
-};
-
-// Also expose under a shorter alias
-// @ts-expect-error
-window.DCWS = window.DigitalCredentialsWalletSelector;
-
-console.log('Wallet auto-registration API exposed');
+console.debug('Wallet auto-registration API exposed');
