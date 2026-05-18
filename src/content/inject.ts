@@ -8,6 +8,7 @@ import type { RequestData } from './protocols/plugins/types';
 import { WalletCompanion } from './public-api/WalletCompanion';
 import { RPC } from './rpc';
 import type { WalletOption } from './types';
+import { OpenID4VPProtocols } from '@shared/protocols';
 
 console.debug('Digital Credentials API interceptor injected');
 
@@ -17,7 +18,13 @@ const rpc = new RPC();
 const publicAPI = new WalletCompanion(rpc);
 
 const protocolRegistry = new ProtocolPluginRegistry();
-protocolRegistry.register(new OpenID4VPPlugin());
+
+for (const protocol of Object.values(OpenID4VPProtocols)) {
+    const variant = protocol === OpenID4VPProtocols.NORMAL
+        ? undefined
+        : protocol.replace('openid4vp-', '');
+    protocolRegistry.register(new OpenID4VPPlugin(variant));
+}
 
 // Override DigitalCredential.userAgentAllowsProtocol
 if (typeof DigitalCredential !== 'undefined') {
