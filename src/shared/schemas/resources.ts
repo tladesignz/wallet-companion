@@ -34,6 +34,7 @@ export const WalletSchema = object({
 	autoRegistered: nullish(boolean()),
 	registeredFrom: nullish(string()), // Origin that triggered auto-registration
 	registeredAt: nullish(string()), // ISO timestamp of registration
+	iconType: nullish(string()), // Icon source: 'emoji', 'favicon', 'identicon', etc.
 });
 export type Wallet = InferOutput<typeof WalletSchema>;
 
