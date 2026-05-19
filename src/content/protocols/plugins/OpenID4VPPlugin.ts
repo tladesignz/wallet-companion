@@ -306,7 +306,7 @@ export class OpenID4VPPlugin extends ProtocolPlugin {
 			} else {
 				console.warn('OpenID4VP: JWT signature verification skipped - no verifier provided');
 				console.warn(
-					'To enable verification, register a JWT verifier via DCWS.registerJWTVerifier()',
+					'To enable verification, register a JWT verifier via WalletCompanion.DigitalCredentials.registerJWTVerifier()',
 				);
 			}
 
