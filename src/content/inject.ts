@@ -193,6 +193,11 @@ function invokeWallet(
 	return new Promise((resolve, reject) => {
 		const walletUrl = buildWalletUrl(wallet, protocol, request, requestId);
 
+		const timer = setTimeout(() => {
+			window.removeEventListener('message', handler);
+			reject(new DOMException('Wallet timeout', 'AbortError'));
+		}, 300000);
+
 		let win: WindowProxy | null;
 
 		const handler = (e: MessageEvent) => {
@@ -208,21 +213,18 @@ function invokeWallet(
 			}
 
 			window.removeEventListener('message', handler);
+			clearTimeout(timer);
 			resolve(e.data.response);
 		};
 
-		window.addEventListener('message', handler);
-
-		setTimeout(() => {
-			window.removeEventListener('message', handler);
-			reject(new DOMException('Wallet timeout', 'AbortError'));
-		}, 300000);
-
 		win = window.open(walletUrl, '_blank');
 		if (!win) {
-			window.removeEventListener('message', handler);
+			clearTimeout(timer);
 			reject(new Error('Popup blocked'));
+			return;
 		}
+
+		window.addEventListener('message', handler);
 	});
 }
 
