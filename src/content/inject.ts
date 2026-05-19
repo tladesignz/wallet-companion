@@ -3,12 +3,12 @@
  * Intercepts navigator.credentials.get() calls for the Digital Credentials API
  */
 
+import { OpenID4VPProtocols } from '@shared/protocols';
 import { OpenID4VPPlugin, ProtocolPluginRegistry } from './protocols/';
 import type { RequestData } from './protocols/plugins/types';
 import { WalletCompanion } from './public-api/WalletCompanion';
 import { RPC } from './rpc';
 import type { WalletOption } from './types';
-import { OpenID4VPProtocols } from '@shared/protocols';
 
 console.debug('Digital Credentials API interceptor injected');
 
@@ -20,10 +20,9 @@ const publicAPI = new WalletCompanion(rpc);
 const protocolRegistry = new ProtocolPluginRegistry();
 
 for (const protocol of Object.values(OpenID4VPProtocols)) {
-    const variant = protocol === OpenID4VPProtocols.NORMAL
-        ? undefined
-        : protocol.replace('openid4vp-', '');
-    protocolRegistry.register(new OpenID4VPPlugin(variant));
+	const variant =
+		protocol === OpenID4VPProtocols.NORMAL ? undefined : protocol.replace('openid4vp-', '');
+	protocolRegistry.register(new OpenID4VPPlugin(variant));
 }
 
 // Override DigitalCredential.userAgentAllowsProtocol
@@ -202,7 +201,7 @@ function invokeWallet(
 			if (e.source !== win) {
 				console.warn('Ignoring response with mismatched source');
 				return;
-			};
+			}
 			if (e.data?.requestId !== requestId) {
 				console.debug('Ignoring response with mismatched requestId:', e.data?.requestId);
 				return;
