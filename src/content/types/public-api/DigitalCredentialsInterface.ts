@@ -1,4 +1,3 @@
-
 import type { JWTVerifier } from '../../protocols/plugins/types';
 
 /**
