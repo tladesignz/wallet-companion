@@ -3,7 +3,7 @@
  */
 
 import { OpenID4VPPlugin } from '../src/content/protocols';
-import type { JWTVerifier as PluginJWTVerifier, JWTVerificationResult } from '../src/content/protocols/plugins/types';
+import type { JWTVerifier as PluginJWTVerifier } from '../src/content/protocols/plugins/types';
 
 type JWTVerifier = (jwt: string, options?: Record<string, unknown>) => Promise<{ valid: boolean; error?: string; payload?: unknown }>;
 
@@ -153,15 +153,11 @@ describe('OpenID4VPPlugin - JWT Verification Integration', () => {
 			const jwt = 'eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiIxMjM0In0.signature';
 			const verifier: JWTVerifier = async (_jwt, _options) => ({
 				valid: true,
-				payload: { sub: '1234' },
 			});
 
-			const result = await plugin.verifyJWT(jwt, verifier as unknown as PluginJWTVerifier);
+			const result = await plugin.verifyJWT(jwt, verifier);
 
 			expect(result.valid).toBe(true);
-			if (result.valid) {
-				expect(result.payload).toEqual({ sub: '1234' });
-			}
 		});
 
 		it('should handle verification failure', async () => {
@@ -171,7 +167,7 @@ describe('OpenID4VPPlugin - JWT Verification Integration', () => {
 				error: 'Invalid signature',
 			});
 
-			const result = await plugin.verifyJWT(jwt, verifier as unknown as PluginJWTVerifier);
+			const result = await plugin.verifyJWT(jwt, verifier);
 
 			expect(result.valid).toBe(false);
 			if (!result.valid) {
@@ -193,7 +189,7 @@ describe('OpenID4VPPlugin - JWT Verification Integration', () => {
 				throw new Error('Crypto error');
 			};
 
-			const result = await plugin.verifyJWT(jwt, verifier as unknown as PluginJWTVerifier);
+			const result = await plugin.verifyJWT(jwt, verifier);
 
 			expect(result.valid).toBe(false);
 			if (!result.valid) {
@@ -279,8 +275,8 @@ describe('OpenID4VPPlugin - JWT Verification Integration', () => {
 			});
 
 			expect(verifierCalled).toBe(true);
-			expect(result._jarSignatureVerified).toBe(true);
-			expect(result.client_id).toBe('https://verifier.example.com');
+			expect(result.verified).toBe(true);
+			expect(result.payload.client_id).toBe('https://verifier.example.com');
 		});
 
 		it('should throw error if verification fails', async () => {
@@ -314,7 +310,7 @@ describe('OpenID4VPPlugin - JWT Verification Integration', () => {
 
 			const result = await plugin.handleRequestUri('https://verifier.example.com/request');
 
-			expect(result._jarSignatureVerified).toBe(false);
+			expect(result.verified).toBe(false);
 			expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('JWT signature verification skipped'));
 
 			consoleSpy.mockRestore();

@@ -311,9 +311,9 @@ export class OpenID4VPPlugin extends ProtocolPlugin {
 			}
 
 			return {
-				...payload,
-				_jarHeader: header,
-				_jarSignatureVerified: !!options.jwtVerifier,
+				payload,
+				header,
+				verified: !!options.jwtVerifier,
 			};
 		} catch (err) {
 			const message = err instanceof Error ? err.message : String(err);

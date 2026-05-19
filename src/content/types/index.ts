@@ -1,5 +1,5 @@
 import type { WalletRegistrationInput } from '@shared/schemas/resources';
-import type { WalletCompanionInterface } from './WalletCompanionInterface';
+import type { WalletCompanionInterface } from './public-api/WalletCompanionInterface';
 
 export * from './public-api/DigitalCredentialsInterface';
 export * from './public-api/WalletCompanionInterface';

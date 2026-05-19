@@ -1,4 +1,5 @@
-import type { DigitalCredentialsInterface, JWTVerifierCallback } from '@content/types';
+import type { DigitalCredentialsInterface } from '@content/types';
+import type { JWTVerifier } from '../protocols/plugins/types';
 
 /**
  * Public API to manage JWT verification callbacks for OpenID4VP JAR flows.
@@ -7,12 +8,19 @@ import type { DigitalCredentialsInterface, JWTVerifierCallback } from '@content/
  *
  * Verifiers are page-session scoped — they persist only for the lifetime
  * of the current page and are not communicated to the extension background.
+ *
+ * @todo This API is currently broken due to browser page isolation. Verifiers
+ * registered on the wallet page cannot be accessed from the RP page where
+ * verification needs to happen. See issue for architectural discussion.
  */
 export class DigitalCredentials implements DigitalCredentialsInterface {
 	/** Maps wallet URL → JWT verification callback. */
-	#jwtVerifiers = new Map<string, JWTVerifierCallback>();
+	#jwtVerifiers = new Map<string, JWTVerifier>();
 
-	registerJWTVerifier(walletUrl: string, verifyCallback: JWTVerifierCallback): void {
+	/**
+	 * @todo Broken: verifier registered here is not accessible from RP page context.
+	 */
+	registerJWTVerifier(walletUrl: string, verifyCallback: JWTVerifier): void {
 		if (typeof verifyCallback !== 'function') {
 			throw new Error('JWT verifier must be a function');
 		}
@@ -27,10 +35,16 @@ export class DigitalCredentials implements DigitalCredentialsInterface {
 		this.#jwtVerifiers.set(walletUrl, verifyCallback);
 	}
 
+	/**
+	 * @todo Broken: see registerJWTVerifier.
+	 */
 	unregisterJWTVerifier(walletUrl: string): boolean {
 		return this.#jwtVerifiers.delete(walletUrl);
 	}
 
+	/**
+	 * @todo Broken: see registerJWTVerifier.
+	 */
 	get registeredJWTVerifiers(): readonly string[] {
 		return Array.from(this.#jwtVerifiers.keys());
 	}

@@ -89,27 +89,42 @@ export type JARPayload = RequestData & {
 	iat?: number;
 };
 
-export type ParsedJAR = JARPayload & {
-	_jarHeader: JARHeader;
-	_jarSignatureVerified: boolean;
+export type ParsedJAR = {
+	payload: JARPayload;
+	header: JARHeader;
+	verified: boolean;
 };
 
+/**
+ * Cryptographic context for JWT verification, extracted from the JOSE header.
+ */
 export type JWTVerificationOptions = {
+	/** Base64-encoded X.509 certificate from the `x5c` header. */
 	certificate?: string;
+	/** Signing algorithm from the `alg` header (e.g., `'ES256'`, `'RS256'`). */
 	algorithm?: string;
+	/** Key identifier from the `kid` header for JWKS lookup. */
 	kid?: string;
 };
 
-export type JWTVerificationResult =
-	| {
-			valid: false;
-			error: string;
-	  }
-	| {
-			valid: true;
-			payload: JARPayload;
-	  };
+/**
+ * Result from a JWT verification callback.
+ */
+export type JWTVerificationResult = {
+	/** `true` if signature verification succeeded. */
+	valid: boolean;
+	/** Error description on failure. */
+	error?: string;
+	/** Decoded payload, if the verifier returns it. */
+	payload?: unknown;
+};
 
+/**
+ * JWT verification callback signature.
+ *
+ * @todo The public API for registering these is currently broken due to browser
+ * page isolation. Verifiers can still be passed directly to handleRequestUri.
+ */
 export type JWTVerifier = (
 	jwt: string,
 	options: JWTVerificationOptions,

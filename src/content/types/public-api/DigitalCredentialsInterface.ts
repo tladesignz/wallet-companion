@@ -1,7 +1,13 @@
+
+import type { JWTVerifier } from '../../protocols/plugins/types';
+
 /**
  * Digital Credentials API-specific features.
  *
  * Access via `window.WalletCompanion.DigitalCredentials`.
+ *
+ * @todo The JWT verifier methods are currently broken due to browser page isolation.
+ * See issue for architectural discussion and potential solutions.
  */
 export interface DigitalCredentialsInterface {
 	/**
@@ -14,12 +20,17 @@ export interface DigitalCredentialsInterface {
 	 * - Never reject — return `{ valid: false, error: '...' }` on failure
 	 * - Complete within 5 seconds
 	 *
+	 * @todo Broken: verifier registered on wallet page is not accessible from
+	 * RP page where verification needs to happen due to page context isolation.
+	 *
 	 * @throws {Error} If walletUrl is invalid or verifyCallback is not a function
 	 */
-	registerJWTVerifier(walletUrl: string, verifyCallback: JWTVerifierCallback): void;
+	registerJWTVerifier(walletUrl: string, verifyCallback: JWTVerifier): void;
 
 	/**
 	 * Remove a JWT verifier for a wallet.
+	 *
+	 * @todo Broken: see registerJWTVerifier.
 	 *
 	 * @returns `true` if a verifier was removed
 	 */
@@ -27,57 +38,8 @@ export interface DigitalCredentialsInterface {
 
 	/**
 	 * Wallet URLs with active JWT verifiers in this page session.
+	 *
+	 * @todo Broken: see registerJWTVerifier.
 	 */
 	readonly registeredJWTVerifiers: readonly string[];
 }
-
-/**
- * Cryptographic context for JWT verification, extracted from the JOSE header.
- */
-export interface JWTVerificationOptions {
-	/**
-	 * Base64-encoded X.509 certificate from the `x5c` header.
-	 */
-	certificate?: string;
-
-	/**
-	 * Signing algorithm from the `alg` header (e.g., `'ES256'`, `'RS256'`).
-	 */
-	algorithm?: string;
-
-	/**
-	 * Key identifier from the `kid` header for JWKS lookup.
-	 */
-	kid?: string;
-}
-
-/**
- * Result from a JWT verification callback.
- */
-export interface JWTVerificationResult {
-	/**
-	 * `true` if signature verification succeeded.
-	 */
-	valid: boolean;
-
-	/**
-	 * Decoded JWT payload on success. Avoids re-parsing the JWT.
-	 */
-	payload?: Record<string, unknown>;
-
-	/**
-	 * Error description on failure (e.g., `'Certificate expired'`).
-	 */
-	error?: string;
-}
-
-/**
- * JWT verification callback signature.
- *
- * @param jwt - Complete JWT string (`header.payload.signature`)
- * @param options - Cryptographic context from the JWT header
- */
-export type JWTVerifierCallback = (
-	jwt: string,
-	options: JWTVerificationOptions,
-) => Promise<JWTVerificationResult>;
