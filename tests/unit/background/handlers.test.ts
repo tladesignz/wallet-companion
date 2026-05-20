@@ -1,288 +1,524 @@
 /**
- * Unit tests for background.ts
+ * Unit tests for background/handlers.ts - handleMessage function
+ *
+ * Tests each message handler exported via handleMessage.
  */
 
-import type { Mock } from 'vitest';
+import { handleMessage } from '../../../src/background/handlers';
+import { InboundMessages } from '../../../src/shared/schemas/messages';
 
-type MockWallet = {
-	id: string;
-	name: string;
-	url: string;
-	icon?: string;
-	color?: string;
-	description?: string;
-	enabled: boolean;
-	autoRegistered?: boolean;
-	registeredFrom?: string;
-	registeredAt?: string;
+// Mock the storage module
+vi.mock('../../../src/background/storage', () => ({
+	Stores: {
+		options: {
+			getEnabled: vi.fn(),
+			getDeveloperMode: vi.fn(),
+			updateOptions: vi.fn(),
+		},
+		wallets: {
+			getAll: vi.fn(),
+			setAll: vi.fn(),
+		},
+		stats: {
+			getStats: vi.fn(),
+			setStats: vi.fn(),
+		},
+	},
+}));
+
+// Mock the runtime module
+vi.mock('../../../src/shared/runtime', () => ({
+	runtimeSendMessage: vi.fn(),
+}));
+
+// Import mocked stores after mocking
+import { Stores } from '../../../src/background/storage';
+
+// Use vi.mocked for proper typing
+const mockStores = {
+	options: {
+		getEnabled: vi.mocked(Stores.options.getEnabled),
+		getDeveloperMode: vi.mocked(Stores.options.getDeveloperMode),
+		updateOptions: vi.mocked(Stores.options.updateOptions),
+	},
+	wallets: {
+		getAll: vi.mocked(Stores.wallets.getAll),
+		setAll: vi.mocked(Stores.wallets.setAll),
+	},
+	stats: {
+		getStats: vi.mocked(Stores.stats.getStats),
+		setStats: vi.mocked(Stores.stats.setStats),
+	},
 };
 
-type UsageStats = {
-	interceptCount: number;
-	walletUses: Record<string, number>;
-};
-
-// Access chrome mock with proper types
-const mockStorage = chrome.storage.local as unknown as {
-	get: Mock<(keys: string | string[] | null) => Promise<Record<string, unknown>>>;
-	set: Mock<(data: Record<string, unknown>) => Promise<void>>;
-};
-
-describe('Background Script - Wallet Management', () => {
-	let DEFAULT_WALLETS: MockWallet[];
-	let STORAGE_KEYS: { WALLETS: string; ENABLED: string; STATS: string };
+describe('handleMessage', () => {
+	const mockSender = { tab: { id: 1 }, frameId: 0 };
+	let sendResponse: (r: unknown) => void;
 
 	beforeEach(() => {
-		// Reset chrome.storage mock
-		mockStorage.get.mockClear();
-		mockStorage.set.mockClear();
+		vi.clearAllMocks();
+		sendResponse = vi.fn<(r: unknown) => void>();
 
-		// Import the module functions (we'll need to refactor background.ts to export them)
-		DEFAULT_WALLETS = [
-			{
-				id: 'wallet-1',
-				name: 'Example Wallet',
-				url: 'https://wallet.example.com',
-				icon: '🔐',
-				color: '#3b82f6',
-				description: 'Example digital identity wallet',
-				enabled: true,
-			},
-		];
-
-		STORAGE_KEYS = {
-			WALLETS: 'configured_wallets',
-			ENABLED: 'extension_enabled',
-			STATS: 'usage_stats',
-		};
+		// Default mock implementations
+		mockStores.options.getEnabled.mockResolvedValue(true);
+		mockStores.options.getDeveloperMode.mockResolvedValue(false);
+		mockStores.wallets.getAll.mockResolvedValue([]);
+		mockStores.stats.getStats.mockResolvedValue({ interceptCount: 0, walletUses: {} });
 	});
 
 	describe('GET_WALLETS', () => {
-		test('should return configured wallets from storage', async () => {
-			const mockWallets: MockWallet[] = [
+		it('should return wallets from storage', async () => {
+			const mockWallets = [
 				{ id: 'w1', name: 'Wallet 1', url: 'https://w1.com', enabled: true },
-				{ id: 'w2', name: 'Wallet 2', url: 'https://w2.com', enabled: true },
+				{ id: 'w2', name: 'Wallet 2', url: 'https://w2.com', enabled: false },
 			];
+			mockStores.wallets.getAll.mockResolvedValue(mockWallets);
 
-			mockStorage.get.mockResolvedValueOnce({
-				configured_wallets: mockWallets,
-			});
+			await handleMessage({ type: InboundMessages.GET_WALLETS }, mockSender, sendResponse);
 
-			const result = await chrome.storage.local.get(STORAGE_KEYS.WALLETS);
-			const wallets = result[STORAGE_KEYS.WALLETS] || DEFAULT_WALLETS;
-
-			expect(wallets).toEqual(mockWallets);
-			expect(chrome.storage.local.get).toHaveBeenCalledWith(STORAGE_KEYS.WALLETS);
+			expect(mockStores.wallets.getAll).toHaveBeenCalled();
+			expect(sendResponse).toHaveBeenCalledWith({ wallets: mockWallets });
 		});
 
-		test('should return DEFAULT_WALLETS when no wallets configured', async () => {
-			mockStorage.get.mockResolvedValueOnce({});
+		it('should return empty array when no wallets configured', async () => {
+			mockStores.wallets.getAll.mockResolvedValue([]);
 
-			const result = await chrome.storage.local.get(STORAGE_KEYS.WALLETS);
-			const wallets = result[STORAGE_KEYS.WALLETS] || DEFAULT_WALLETS;
+			await handleMessage({ type: InboundMessages.GET_WALLETS }, mockSender, sendResponse);
 
-			expect(wallets).toEqual(DEFAULT_WALLETS);
+			expect(sendResponse).toHaveBeenCalledWith({ wallets: [] });
+		});
+
+		it('should return error when storage fails', async () => {
+			mockStores.wallets.getAll.mockRejectedValueOnce(new Error('Storage error'));
+
+			await handleMessage({ type: InboundMessages.GET_WALLETS }, mockSender, sendResponse);
+
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
 		});
 	});
 
 	describe('SAVE_WALLETS', () => {
-		test('should save wallets to storage', async () => {
-			const walletsToSave: MockWallet[] = [{ id: 'w1', name: 'New Wallet', url: 'https://new.com', enabled: true }];
+		it('should save wallets to storage', async () => {
+			const walletsToSave = [{ id: 'w1', name: 'New Wallet', url: 'https://new.com', enabled: true }];
 
-			mockStorage.set.mockResolvedValueOnce();
+			await handleMessage({ type: InboundMessages.SAVE_WALLETS, wallets: walletsToSave }, mockSender, sendResponse);
 
-			await chrome.storage.local.set({ [STORAGE_KEYS.WALLETS]: walletsToSave });
+			expect(mockStores.wallets.setAll).toHaveBeenCalledWith(walletsToSave);
+			expect(sendResponse).toHaveBeenCalledWith({ success: true });
+		});
 
-			expect(chrome.storage.local.set).toHaveBeenCalledWith({
-				configured_wallets: walletsToSave,
+		it('should return error when storage fails', async () => {
+			mockStores.wallets.setAll.mockRejectedValueOnce(new Error('Storage error'));
+
+			await handleMessage(
+				{ type: InboundMessages.SAVE_WALLETS, wallets: [{ id: 'w1', name: 'W', url: 'https://w.com', enabled: true }] },
+				mockSender,
+				sendResponse,
+			);
+
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
+		});
+
+		it('should return error when wallets field is missing', async () => {
+			await handleMessage({ type: InboundMessages.SAVE_WALLETS } as unknown, mockSender, sendResponse);
+
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
+		});
+	});
+
+	describe('GET_SETTINGS', () => {
+		it('should return current settings', async () => {
+			mockStores.options.getEnabled.mockResolvedValue(true);
+			mockStores.options.getDeveloperMode.mockResolvedValue(true);
+			mockStores.stats.getStats.mockResolvedValue({ interceptCount: 5, walletUses: { w1: 3 } });
+
+			await handleMessage({ type: InboundMessages.GET_SETTINGS }, mockSender, sendResponse);
+
+			expect(sendResponse).toHaveBeenCalledWith({
+				enabled: true,
+				developerMode: true,
+				stats: { interceptCount: 5, walletUses: { w1: 3 } },
 			});
+		});
+
+		it('should default enabled to true when undefined', async () => {
+			mockStores.options.getEnabled.mockResolvedValue(undefined);
+			mockStores.options.getDeveloperMode.mockResolvedValue(false);
+
+			await handleMessage({ type: InboundMessages.GET_SETTINGS }, mockSender, sendResponse);
+
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ enabled: true }));
+		});
+
+		it('should default stats when undefined', async () => {
+			mockStores.stats.getStats.mockResolvedValue(undefined);
+
+			await handleMessage({ type: InboundMessages.GET_SETTINGS }, mockSender, sendResponse);
+
+			expect(sendResponse).toHaveBeenCalledWith(
+				expect.objectContaining({ stats: { interceptCount: 0, walletUses: {} } }),
+			);
+		});
+
+		it('should return error when storage fails', async () => {
+			mockStores.options.getEnabled.mockRejectedValueOnce(new Error('Storage error'));
+
+			await handleMessage({ type: InboundMessages.GET_SETTINGS }, mockSender, sendResponse);
+
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
+		});
+	});
+
+	describe('SAVE_SETTINGS', () => {
+		it('should save enabled and developerMode settings', async () => {
+			await handleMessage(
+				{ type: InboundMessages.SAVE_SETTINGS, enabled: false, developerMode: true },
+				mockSender,
+				sendResponse,
+			);
+
+			expect(mockStores.options.updateOptions).toHaveBeenCalledWith({ enabled: false, developerMode: true });
+			expect(sendResponse).toHaveBeenCalledWith({ success: true });
+		});
+
+		it('should return error when storage fails', async () => {
+			mockStores.options.updateOptions.mockRejectedValueOnce(new Error('Storage error'));
+
+			await handleMessage(
+				{ type: InboundMessages.SAVE_SETTINGS, enabled: true, developerMode: false },
+				mockSender,
+				sendResponse,
+			);
+
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
+		});
+
+		it('should return error when required fields are missing', async () => {
+			await handleMessage({ type: InboundMessages.SAVE_SETTINGS } as unknown, mockSender, sendResponse);
+
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
+		});
+	});
+
+	describe('TOGGLE_ENABLED', () => {
+		it('should update enabled setting to false', async () => {
+			await handleMessage({ type: InboundMessages.TOGGLE_ENABLED, enabled: false }, mockSender, sendResponse);
+
+			expect(mockStores.options.updateOptions).toHaveBeenCalledWith({ enabled: false });
+			expect(sendResponse).toHaveBeenCalledWith({ success: true });
+		});
+
+		it('should update enabled setting to true', async () => {
+			await handleMessage({ type: InboundMessages.TOGGLE_ENABLED, enabled: true }, mockSender, sendResponse);
+
+			expect(mockStores.options.updateOptions).toHaveBeenCalledWith({ enabled: true });
+			expect(sendResponse).toHaveBeenCalledWith({ success: true });
+		});
+
+		it('should return error when storage fails', async () => {
+			mockStores.options.updateOptions.mockRejectedValueOnce(new Error('Storage error'));
+
+			await handleMessage({ type: InboundMessages.TOGGLE_ENABLED, enabled: true }, mockSender, sendResponse);
+
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
+		});
+
+		it('should return error when enabled field is missing', async () => {
+			await handleMessage({ type: InboundMessages.TOGGLE_ENABLED } as unknown, mockSender, sendResponse);
+
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
 		});
 	});
 
 	describe('REGISTER_WALLET', () => {
-		test('should register a new wallet', async () => {
-			const existingWallets: MockWallet[] = [{ id: 'w1', name: 'Wallet 1', url: 'https://w1.com', enabled: true }];
-
-			mockStorage.get.mockResolvedValueOnce({
-				configured_wallets: existingWallets,
-			});
+		it('should register a new wallet', async () => {
+			mockStores.wallets.getAll.mockResolvedValue([]);
 
 			const newWallet = {
 				name: 'New Wallet',
 				url: 'https://new-wallet.com',
 				description: 'A new wallet',
-				icon: '🔐',
-				color: '#3b82f6',
 			};
 
-			const result = await chrome.storage.local.get(STORAGE_KEYS.WALLETS);
-			const wallets: MockWallet[] = (result[STORAGE_KEYS.WALLETS] as MockWallet[]) || DEFAULT_WALLETS;
+			await handleMessage(
+				{ type: InboundMessages.REGISTER_WALLET, wallet: newWallet },
+				mockSender,
+				sendResponse,
+			);
 
-			// Check if wallet already exists
-			const existingWallet = wallets.find((w) => w.url === newWallet.url);
-			expect(existingWallet).toBeUndefined();
-
-			// Add new wallet
-			const walletId = 'wallet-' + Date.now();
-			const walletToAdd: MockWallet = {
-				id: walletId,
-				...newWallet,
-				enabled: true,
-				autoRegistered: true,
-				registeredFrom: 'https://example.com',
-				registeredAt: new Date().toISOString(),
-			};
-
-			wallets.push(walletToAdd);
-
-			mockStorage.set.mockResolvedValueOnce();
-			await chrome.storage.local.set({ [STORAGE_KEYS.WALLETS]: wallets });
-
-			expect(chrome.storage.local.set).toHaveBeenCalled();
-			expect(wallets).toHaveLength(2);
-			expect(wallets[1].name).toBe('New Wallet');
-			expect(wallets[1].autoRegistered).toBe(true);
+			expect(mockStores.wallets.setAll).toHaveBeenCalledWith(
+				expect.arrayContaining([
+					expect.objectContaining({
+						name: 'New Wallet',
+						url: 'https://new-wallet.com',
+						enabled: true,
+						autoRegistered: true,
+					}),
+				]),
+			);
+			expect(sendResponse).toHaveBeenCalledWith(
+				expect.objectContaining({ success: true, alreadyRegistered: false }),
+			);
 		});
 
-		test('should return existing wallet if URL already registered', async () => {
-			const existingWallets: MockWallet[] = [{ id: 'w1', name: 'Existing', url: 'https://existing.com', enabled: true }];
+		it('should return existing wallet if URL already registered', async () => {
+			const existingWallet = { id: 'w1', name: 'Existing', url: 'https://existing.com', enabled: true };
+			mockStores.wallets.getAll.mockResolvedValue([existingWallet]);
 
-			mockStorage.get.mockResolvedValueOnce({
-				configured_wallets: existingWallets,
+			await handleMessage(
+				{ type: InboundMessages.REGISTER_WALLET, wallet: { name: 'Duplicate', url: 'https://existing.com' } },
+				mockSender,
+				sendResponse,
+			);
+
+			expect(mockStores.wallets.setAll).not.toHaveBeenCalled();
+			expect(sendResponse).toHaveBeenCalledWith({
+				success: true,
+				alreadyRegistered: true,
+				wallet: existingWallet,
 			});
+		});
 
-			const duplicateWallet = {
-				name: 'Duplicate',
-				url: 'https://existing.com',
-				description: 'Should not be added',
-				icon: '🔐',
-			};
+		it('should return error when storage fails on getAll', async () => {
+			mockStores.wallets.getAll.mockRejectedValueOnce(new Error('Storage error'));
 
-			const result = await chrome.storage.local.get(STORAGE_KEYS.WALLETS);
-			const wallets: MockWallet[] = (result[STORAGE_KEYS.WALLETS] as MockWallet[]) || DEFAULT_WALLETS;
+			await handleMessage(
+				{ type: InboundMessages.REGISTER_WALLET, wallet: { name: 'W', url: 'https://w.com' } },
+				mockSender,
+				sendResponse,
+			);
 
-			const existingWallet = wallets.find((w) => w.url === duplicateWallet.url);
-			expect(existingWallet).toBeDefined();
-			expect(existingWallet?.id).toBe('w1');
-			expect(existingWallet?.name).toBe('Existing');
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
+		});
+
+		it('should return error when storage fails on setAll', async () => {
+			mockStores.wallets.getAll.mockResolvedValue([]);
+			mockStores.wallets.setAll.mockRejectedValueOnce(new Error('Storage error'));
+
+			await handleMessage(
+				{ type: InboundMessages.REGISTER_WALLET, wallet: { name: 'W', url: 'https://w.com' } },
+				mockSender,
+				sendResponse,
+			);
+
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
+		});
+
+		it('should return error when wallet field is missing', async () => {
+			await handleMessage({ type: InboundMessages.REGISTER_WALLET } as unknown, mockSender, sendResponse);
+
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
 		});
 	});
 
 	describe('CHECK_WALLET', () => {
-		test('should return true if wallet is registered', async () => {
-			const wallets: MockWallet[] = [
-				{ id: 'w1', name: 'Wallet 1', url: 'https://w1.com', enabled: true },
-				{ id: 'w2', name: 'Wallet 2', url: 'https://w2.com', enabled: true },
-			];
+		it('should return true when wallet is registered', async () => {
+			mockStores.wallets.getAll.mockResolvedValue([{ id: 'w1', name: 'W1', url: 'https://wallet.example.com', enabled: true }]);
 
-			mockStorage.get.mockResolvedValueOnce({
-				configured_wallets: wallets,
-			});
+			await handleMessage(
+				{ type: InboundMessages.CHECK_WALLET, url: 'https://wallet.example.com' },
+				mockSender,
+				sendResponse,
+			);
 
-			const result = await chrome.storage.local.get(STORAGE_KEYS.WALLETS);
-			const storedWallets: MockWallet[] = (result[STORAGE_KEYS.WALLETS] as MockWallet[]) || DEFAULT_WALLETS;
-
-			const isRegistered = storedWallets.some((w) => w.url === 'https://w1.com');
-			expect(isRegistered).toBe(true);
+			expect(sendResponse).toHaveBeenCalledWith({ isRegistered: true });
 		});
 
-		test('should return false if wallet is not registered', async () => {
-			const wallets: MockWallet[] = [{ id: 'w1', name: 'Wallet 1', url: 'https://w1.com', enabled: true }];
+		it('should return false when wallet is not registered', async () => {
+			mockStores.wallets.getAll.mockResolvedValue([]);
 
-			mockStorage.get.mockResolvedValueOnce({
-				configured_wallets: wallets,
-			});
+			await handleMessage(
+				{ type: InboundMessages.CHECK_WALLET, url: 'https://unknown.com' },
+				mockSender,
+				sendResponse,
+			);
 
-			const result = await chrome.storage.local.get(STORAGE_KEYS.WALLETS);
-			const storedWallets: MockWallet[] = (result[STORAGE_KEYS.WALLETS] as MockWallet[]) || DEFAULT_WALLETS;
-
-			const isRegistered = storedWallets.some((w) => w.url === 'https://not-registered.com');
-			expect(isRegistered).toBe(false);
-		});
-	});
-
-	describe('Extension Settings', () => {
-		test('should get extension enabled status', async () => {
-			mockStorage.get.mockResolvedValueOnce({
-				extension_enabled: true,
-				usage_stats: { interceptCount: 5, walletUses: {} },
-			});
-
-			const result = await chrome.storage.local.get([STORAGE_KEYS.ENABLED, STORAGE_KEYS.STATS]);
-
-			expect(result.extension_enabled).toBe(true);
-			expect((result.usage_stats as UsageStats).interceptCount).toBe(5);
+			expect(sendResponse).toHaveBeenCalledWith({ isRegistered: false });
 		});
 
-		test('should default to enabled if not set', async () => {
-			mockStorage.get.mockResolvedValueOnce({});
+		it('should return error when storage fails', async () => {
+			mockStores.wallets.getAll.mockRejectedValueOnce(new Error('Storage error'));
 
-			const result = await chrome.storage.local.get([STORAGE_KEYS.ENABLED, STORAGE_KEYS.STATS]);
-			const enabled = result[STORAGE_KEYS.ENABLED] !== false;
+			await handleMessage(
+				{ type: InboundMessages.CHECK_WALLET, url: 'https://wallet.example.com' },
+				mockSender,
+				sendResponse,
+			);
 
-			expect(enabled).toBe(true);
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
 		});
 
-		test('should toggle extension enabled state', async () => {
-			mockStorage.set.mockResolvedValueOnce();
+		it('should return error when url is invalid', async () => {
+			await handleMessage(
+				{ type: InboundMessages.CHECK_WALLET, url: 'not-a-valid-url' },
+				mockSender,
+				sendResponse,
+			);
 
-			await chrome.storage.local.set({ [STORAGE_KEYS.ENABLED]: false });
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
+		});
 
-			expect(chrome.storage.local.set).toHaveBeenCalledWith({
-				extension_enabled: false,
-			});
+		it('should return error when url field is missing', async () => {
+			await handleMessage({ type: InboundMessages.CHECK_WALLET } as unknown, mockSender, sendResponse);
+
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
 		});
 	});
 
-	describe('Usage Statistics', () => {
-		test('should increment intercept count', async () => {
-			const stats: UsageStats = { interceptCount: 5, walletUses: {} };
+	describe('GET_SUPPORTED_PROTOCOLS', () => {
+		it('should return protocols from enabled wallets', async () => {
+			mockStores.wallets.getAll.mockResolvedValue([
+				{ id: 'w1', name: 'W1', url: 'https://w1.com', enabled: true, protocols: ['openid4vp', 'dcapi'] },
+				{ id: 'w2', name: 'W2', url: 'https://w2.com', enabled: true, protocols: ['openid4vp'] },
+				{ id: 'w3', name: 'W3', url: 'https://w3.com', enabled: false, protocols: ['other'] },
+			]);
 
-			mockStorage.get.mockResolvedValueOnce({
-				usage_stats: stats,
+			await handleMessage({ type: InboundMessages.GET_SUPPORTED_PROTOCOLS }, mockSender, sendResponse);
+
+			expect(sendResponse).toHaveBeenCalledWith({
+				protocols: expect.arrayContaining(['openid4vp', 'dcapi']),
 			});
-
-			const result = await chrome.storage.local.get(STORAGE_KEYS.STATS);
-			const currentStats: UsageStats = (result[STORAGE_KEYS.STATS] as UsageStats) || { interceptCount: 0, walletUses: {} };
-
-			currentStats.interceptCount += 1;
-
-			mockStorage.set.mockResolvedValueOnce();
-			await chrome.storage.local.set({ [STORAGE_KEYS.STATS]: currentStats });
-
-			expect(currentStats.interceptCount).toBe(6);
-			expect(chrome.storage.local.set).toHaveBeenCalledWith({
-				usage_stats: currentStats,
-			});
+			// Should not include 'other' from disabled wallet
+			const response = vi.mocked(sendResponse).mock.calls[0][0] as { protocols: string[] };
+			expect(response.protocols).not.toContain('other');
 		});
 
-		test('should track wallet usage', async () => {
-			const stats: UsageStats = { interceptCount: 10, walletUses: { 'wallet-1': 3 } };
+		it('should return empty array when no wallets have protocols', async () => {
+			mockStores.wallets.getAll.mockResolvedValue([{ id: 'w1', name: 'W1', url: 'https://w1.com', enabled: true }]);
 
-			mockStorage.get.mockResolvedValueOnce({
-				usage_stats: stats,
-			});
+			await handleMessage({ type: InboundMessages.GET_SUPPORTED_PROTOCOLS }, mockSender, sendResponse);
 
-			const result = await chrome.storage.local.get(STORAGE_KEYS.STATS);
-			const currentStats: UsageStats = (result[STORAGE_KEYS.STATS] as UsageStats) || { interceptCount: 0, walletUses: {} };
-
-			const walletId = 'wallet-1';
-			currentStats.walletUses[walletId] = (currentStats.walletUses[walletId] || 0) + 1;
-
-			expect(currentStats.walletUses['wallet-1']).toBe(4);
+			expect(sendResponse).toHaveBeenCalledWith({ protocols: [] });
 		});
 
-		test('should clear statistics', async () => {
-			mockStorage.set.mockResolvedValueOnce();
+		it('should return error when storage fails', async () => {
+			mockStores.wallets.getAll.mockRejectedValueOnce(new Error('Storage error'));
 
-			const clearedStats: UsageStats = { interceptCount: 0, walletUses: {} };
-			await chrome.storage.local.set({ usage_stats: clearedStats });
+			await handleMessage({ type: InboundMessages.GET_SUPPORTED_PROTOCOLS }, mockSender, sendResponse);
 
-			expect(chrome.storage.local.set).toHaveBeenCalledWith({
-				usage_stats: clearedStats,
-			});
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
+		});
+	});
+
+	describe('CONTENT_SCRIPT_READY', () => {
+		it('should acknowledge content script ready', async () => {
+			await handleMessage(
+				{ type: InboundMessages.CONTENT_SCRIPT_READY, timestamp: Date.now() },
+				mockSender,
+				sendResponse,
+			);
+
+			expect(sendResponse).toHaveBeenCalledWith({ success: true });
+		});
+
+		it('should return error when timestamp is missing', async () => {
+			await handleMessage({ type: InboundMessages.CONTENT_SCRIPT_READY } as unknown, mockSender, sendResponse);
+
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
+		});
+
+		it('should return error when timestamp is invalid type', async () => {
+			await handleMessage(
+				{ type: InboundMessages.CONTENT_SCRIPT_READY, timestamp: 'not-a-number' } as unknown,
+				mockSender,
+				sendResponse,
+			);
+
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
+		});
+	});
+
+	describe('CLEAR_STATS', () => {
+		it('should reset statistics to zero', async () => {
+			await handleMessage({ type: InboundMessages.CLEAR_STATS }, mockSender, sendResponse);
+
+			expect(mockStores.stats.setStats).toHaveBeenCalledWith({ interceptCount: 0, walletUses: {} });
+			expect(sendResponse).toHaveBeenCalledWith({ success: true });
+		});
+
+		it('should return error when storage fails', async () => {
+			mockStores.stats.setStats.mockRejectedValueOnce(new Error('Storage error'));
+
+			await handleMessage({ type: InboundMessages.CLEAR_STATS }, mockSender, sendResponse);
+
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
+		});
+	});
+
+	describe('WALLET_SELECTED', () => {
+		it('should record wallet usage and return success', async () => {
+			mockStores.stats.getStats.mockResolvedValue({ interceptCount: 5, walletUses: {} });
+
+			await handleMessage(
+				{ type: InboundMessages.WALLET_SELECTED, walletId: 'w1', protocol: 'openid4vp' },
+				mockSender,
+				sendResponse,
+			);
+
+			expect(mockStores.stats.setStats).toHaveBeenCalledWith(
+				expect.objectContaining({ walletUses: { w1: 1 } }),
+			);
+			expect(sendResponse).toHaveBeenCalledWith({ success: true });
+		});
+
+		it('should increment existing wallet usage count', async () => {
+			mockStores.stats.getStats.mockResolvedValue({ interceptCount: 5, walletUses: { w1: 3 } });
+
+			await handleMessage(
+				{ type: InboundMessages.WALLET_SELECTED, walletId: 'w1', protocol: 'openid4vp' },
+				mockSender,
+				sendResponse,
+			);
+
+			expect(mockStores.stats.setStats).toHaveBeenCalledWith(
+				expect.objectContaining({ walletUses: { w1: 4 } }),
+			);
+		});
+
+		it('should return error when storage fails', async () => {
+			mockStores.stats.getStats.mockRejectedValueOnce(new Error('Storage error'));
+
+			await handleMessage(
+				{ type: InboundMessages.WALLET_SELECTED, walletId: 'w1', protocol: 'openid4vp' },
+				mockSender,
+				sendResponse,
+			);
+
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
+		});
+
+		it('should return error when walletId is missing', async () => {
+			await handleMessage(
+				{ type: InboundMessages.WALLET_SELECTED, protocol: 'openid4vp' } as unknown,
+				mockSender,
+				sendResponse,
+			);
+
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
+		});
+
+		it('should return error when protocol is missing', async () => {
+			await handleMessage(
+				{ type: InboundMessages.WALLET_SELECTED, walletId: 'w1' } as unknown,
+				mockSender,
+				sendResponse,
+			);
+
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
+		});
+	});
+
+	describe('Error handling', () => {
+		it('should return error response for invalid message type', async () => {
+			await handleMessage({ type: 'INVALID_TYPE' }, mockSender, sendResponse);
+
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
+		});
+
+		it('should return error response for malformed message', async () => {
+			await handleMessage(null, mockSender, sendResponse);
+
+			expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
 		});
 	});
 });
-
-export {};
