@@ -25,11 +25,10 @@
     "format": "biome format --write src/",
     "test": "vitest run",
     "test:unit": "vitest run",
-    "test:integration": "vitest run --config vitest.integration.config.ts",
-    "test:wallet": "vitest run --config vitest.integration.config.ts tests/integration/wallet-registration.test.ts",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:all": "pnpm test:unit && pnpm build:chrome && pnpm test:integration",
+    "test:all": "pnpm test:unit && pnpm build:chrome && pnpm test:e2e",
     "test:server": "serve tests/fixtures -l 3456"
   },
   "keywords": [
