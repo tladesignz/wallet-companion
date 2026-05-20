@@ -25,8 +25,8 @@
     "format": "biome format --write src/",
     "test": "vitest run",
     "test:unit": "vitest run",
-    "test:integration": "vitest run tests/integration.test.js tests/wallet-integration.test.js",
-    "test:wallet": "vitest run tests/wallet-integration.test.js",
+    "test:integration": "vitest run --config vitest.integration.config.ts tests/integration.test.ts tests/wallet-integration.test.ts",
+    "test:wallet": "vitest run --config vitest.integration.config.ts tests/wallet-integration.test.ts",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:all": "pnpm test:unit && pnpm build:chrome && pnpm test:integration"

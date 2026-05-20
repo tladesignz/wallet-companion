@@ -6,27 +6,26 @@ This project includes both **unit tests** and **integration tests** to ensure th
 
 ## Testing Stack
 
-- **Jest** - Unit testing framework
+- **Vitest** - Unit and integration testing framework
 - **Puppeteer** - Integration testing (browser automation)
 - **jsdom** - DOM testing environment
-- **@testing-library/jest-dom** - DOM matchers
 
 ## Test Structure
 
 ```
 tests/
-├── setup.js                  # Jest setup and mocks
-├── background.test.js        # Background script tests (13)
-├── content.test.js           # Content script message bridge (44)
-├── inject.test.js            # DC API & wallet registration tests (61)
-├── jwt-verification.test.js  # JWT callback tests (21)
-├── modal.test.js             # Wallet selector modal tests (45)
-├── openid4vp.test.js         # OpenID4VP protocol tests (36)
-├── options.test.js           # Options page logic tests (59)
-├── popup.test.js             # Popup UI tests (33)
-├── protocols.test.js         # Protocol plugin tests (20)
-├── integration.test.js       # E2E integration tests (separate config)
-└── wallet-integration.test.js # Wallet integration tests (separate config)
+├── setup.ts                   # Vitest setup and mocks
+├── background.test.ts         # Background script tests
+├── content.test.ts            # Content script message bridge
+├── inject.test.ts             # DC API & wallet registration tests
+├── jwt-verification.test.ts   # JWT callback tests
+├── modal.test.ts              # Wallet selector modal tests
+├── openid4vp.test.ts          # OpenID4VP protocol tests
+├── options.test.ts            # Options page logic tests
+├── popup.test.ts              # Popup UI tests
+├── protocols.test.ts          # Protocol plugin tests
+├── integration.test.ts        # E2E integration tests (separate config)
+└── wallet-integration.test.ts # Wallet integration tests (separate config)
 ```
 
 ## Running Tests
@@ -69,7 +68,7 @@ pnpm test:all
 
 ### Unit Tests
 
-#### Background Script Tests (`background.test.js`)
+#### Background Script Tests (`background.test.ts`)
 - ✅ Wallet storage and retrieval
 - ✅ Wallet registration (auto-registration API)
 - ✅ Duplicate detection
@@ -77,7 +76,7 @@ pnpm test:all
 - ✅ Usage statistics tracking
 - ✅ Message handling
 
-#### Inject Script Tests (`inject.test.js`)
+#### Inject Script Tests (`inject.test.ts`)
 - ✅ DC API interception detection
 - ✅ Request ID generation
 - ✅ Event dispatching
@@ -86,7 +85,7 @@ pnpm test:all
 - ✅ Response handling
 - ✅ Error handling
 
-#### Options Page Tests (`options.test.js`)
+#### Options Page Tests (`options.test.ts`)
 - ✅ Wallet CRUD operations
 - ✅ wwWallet preset handling
 - ✅ Form validation
@@ -97,7 +96,7 @@ pnpm test:all
 
 ### Integration Tests
 
-#### Extension Installation (`integration.test.js`)
+#### Extension Installation (`integration.test.ts`)
 - ✅ Extension loads successfully
 - ✅ Extension ID is generated
 - ✅ Extension pages are accessible
@@ -128,7 +127,7 @@ pnpm test:all
 ## Test Mocks
 
 ### Browser APIs
-The test setup provides mocks for:
+The Vitest setup ([tests/setup.ts](../tests/setup.ts)) provides mocks for:
 - `chrome.runtime`
 - `chrome.storage`
 - `chrome.tabs`
@@ -147,13 +146,15 @@ Console methods are mocked to reduce test noise while still being testable.
 
 ### Unit Test Example
 
-```javascript
+```typescript
+import { describe, it, expect, beforeEach } from 'vitest';
+
 describe('Feature Name', () => {
   beforeEach(() => {
     // Setup
   });
 
-  test('should do something', () => {
+  it('should do something', () => {
     // Arrange
     const input = 'test';
     
@@ -168,8 +169,11 @@ describe('Feature Name', () => {
 
 ### Integration Test Example
 
-```javascript
-test('should interact with extension', async () => {
+```typescript
+import { it, expect } from 'vitest';
+import puppeteer from 'puppeteer';
+
+it('should interact with extension', async () => {
   const page = await browser.newPage();
   await page.goto(`chrome-extension://${extensionId}/popup.html`);
   
@@ -244,7 +248,7 @@ jobs:
 
 **Solutions**:
 1. Ensure Chrome extension is built: `pnpm build:chrome`
-2. Check that `chrome/` directory exists and contains all files
+2. Check that `dist/chrome/` directory exists and contains all files
 3. Increase timeout in test (default is 10000ms)
 4. Run with `headless: false` to see what's happening
 
