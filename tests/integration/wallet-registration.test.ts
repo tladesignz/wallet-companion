@@ -16,8 +16,8 @@ const __dirname = dirname(__filename);
 describe('Mock Wallet Integration Tests', () => {
 	let browser: Browser;
 	let extensionId: string | undefined;
-	const EXTENSION_PATH = join(__dirname, '..', 'dist', 'chrome');
-	const MOCK_WALLET_PATH = join(__dirname, 'fixtures', 'mock-wallet.html');
+	const EXTENSION_PATH = join(__dirname, '../..', 'dist', 'chrome');
+	const MOCK_WALLET_PATH = join(__dirname, '../fixtures', 'mock-wallet.html');
 
 	beforeAll(async () => {
 		// Check if extension is built

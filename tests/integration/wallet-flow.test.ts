@@ -14,7 +14,7 @@ const __dirname = dirname(__filename);
 describe('Browser Extension - Integration Tests', () => {
 	let browser: Browser;
 	let extensionId: string | undefined;
-	const EXTENSION_PATH = join(__dirname, '..', 'dist', 'chrome');
+	const EXTENSION_PATH = join(__dirname, '../..', 'dist', 'chrome');
 
 	beforeAll(async () => {
 		// Check if extension is built

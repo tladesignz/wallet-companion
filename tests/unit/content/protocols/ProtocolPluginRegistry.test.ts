@@ -2,7 +2,7 @@
  * Tests for Protocol Plugin System
  */
 
-import { ExampleProtocolPlugin, ProtocolPlugin, ProtocolPluginRegistry } from '../src/content/protocols';
+import { ExampleProtocolPlugin, ProtocolPlugin, ProtocolPluginRegistry } from '../../../../src/content/protocols';
 
 // Concrete implementation for testing abstract base class
 class TestProtocolPlugin extends ProtocolPlugin {

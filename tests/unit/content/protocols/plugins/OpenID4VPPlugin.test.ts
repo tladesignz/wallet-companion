@@ -3,8 +3,8 @@
  * Based on wwWallet implementation patterns
  */
 
-import { OpenID4VPPlugin } from '../src/content/protocols';
-import type { RequestData, OpenID4VPResponse } from '../src/content/protocols/plugins/types';
+import { OpenID4VPPlugin } from '../../../../../src/content/protocols';
+import type { RequestData, OpenID4VPResponse } from '../../../../../src/content/protocols/plugins/types';
 
 // Partial request data for URL-based inputs
 type URLOnlyRequest = { url: string };
@@ -540,6 +540,220 @@ describe('OpenID4VPPlugin', () => {
 			const formatted = plugin.formatForWallet(preparedRequest, 'https://wallet.example.com');
 
 			expect(formatted.authorizationUrl).toContain('dcql_query=');
+		});
+	});
+
+	describe('verifyJWT()', () => {
+		type JWTVerifier = (
+			jwt: string,
+			options?: Record<string, unknown>,
+		) => Promise<{ valid: boolean; error?: string; payload?: unknown }>;
+
+		it('should verify JWT using wallet verifier', async () => {
+			const jwt = 'eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiIxMjM0In0.signature';
+			const verifier: JWTVerifier = async () => ({ valid: true });
+
+			const result = await plugin.verifyJWT(jwt, verifier);
+
+			expect(result.valid).toBe(true);
+		});
+
+		it('should handle verification failure', async () => {
+			const jwt = 'invalid.jwt.token';
+			const verifier: JWTVerifier = async () => ({
+				valid: false,
+				error: 'Invalid signature',
+			});
+
+			const result = await plugin.verifyJWT(jwt, verifier);
+
+			expect(result.valid).toBe(false);
+			expect(result.error).toBe('Invalid signature');
+		});
+
+		it('should reject non-function verifiers', async () => {
+			const jwt = 'eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiIxMjM0In0.signature';
+
+			await expect(plugin.verifyJWT(jwt, 'not a function' as unknown as JWTVerifier)).rejects.toThrow(
+				'Verifier must be a function',
+			);
+		});
+
+		it('should handle verifier that throws error', async () => {
+			const jwt = 'eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiIxMjM0In0.signature';
+			const verifier: JWTVerifier = async () => {
+				throw new Error('Crypto error');
+			};
+
+			const result = await plugin.verifyJWT(jwt, verifier);
+
+			expect(result.valid).toBe(false);
+			expect(result.error).toBe('Crypto error');
+		});
+
+		it('should validate verifier return value structure', async () => {
+			const jwt = 'eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiIxMjM0In0.signature';
+			const verifier = async () => 'invalid return';
+
+			const result = await plugin.verifyJWT(jwt, verifier as unknown as JWTVerifier);
+
+			expect(result.valid).toBe(false);
+			expect(result.error).toContain('must return an object');
+		});
+
+		it('should validate verifier includes valid property', async () => {
+			const jwt = 'eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiIxMjM0In0.signature';
+			const verifier = async () => ({ payload: {} });
+
+			const result = await plugin.verifyJWT(jwt, verifier as unknown as JWTVerifier);
+
+			expect(result.valid).toBe(false);
+			expect(result.error).toContain('must include "valid" property');
+		});
+
+		it('should pass options to verifier', async () => {
+			const jwt = 'eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiIxMjM0In0.signature';
+			let receivedOptions: Record<string, unknown> | undefined;
+
+			const verifier: JWTVerifier = async (_jwt, options) => {
+				receivedOptions = options;
+				return { valid: true };
+			};
+
+			const testOptions = {
+				certificate: 'MIICert...',
+				algorithm: 'ES256',
+				kid: 'key-1',
+			};
+
+			await plugin.verifyJWT(jwt, verifier, testOptions);
+
+			expect(receivedOptions).toEqual(testOptions);
+		});
+	});
+
+	describe('handleRequestUri()', () => {
+		type JWTVerifier = (
+			jwt: string,
+			options?: Record<string, unknown>,
+		) => Promise<{ valid: boolean; error?: string; payload?: unknown }>;
+
+		beforeEach(() => {
+			globalThis.fetch = vi.fn();
+		});
+
+		afterEach(() => {
+			delete (globalThis as { fetch?: unknown }).fetch;
+		});
+
+		it('should verify JWT when verifier is provided', async () => {
+			const mockJWT =
+				'eyJ0eXAiOiJvYXV0aC1hdXRoei1yZXErand0IiwiYWxnIjoiRVMyNTYiLCJ4NWMiOlsiTUlJQ2VydCJdfQ.eyJjbGllbnRfaWQiOiJodHRwczovL3ZlcmlmaWVyLmV4YW1wbGUuY29tIiwibm9uY2UiOiIxMjMifQ.signature';
+
+			(globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+				ok: true,
+				text: async () => mockJWT,
+			});
+
+			let verifierCalled = false;
+			const verifier: JWTVerifier = async (jwt, options) => {
+				verifierCalled = true;
+				expect(jwt).toBe(mockJWT);
+				expect((options as { certificate?: string }).certificate).toBe('MIICert');
+				expect((options as { algorithm?: string }).algorithm).toBe('ES256');
+				return { valid: true };
+			};
+
+			const result = await plugin.handleRequestUri('https://verifier.example.com/request', {
+				jwtVerifier: verifier,
+			});
+
+			expect(verifierCalled).toBe(true);
+			expect(result.verified).toBe(true);
+			expect(result.payload.client_id).toBe('https://verifier.example.com');
+		});
+
+		it('should throw error if verification fails', async () => {
+			const mockJWT =
+				'eyJ0eXAiOiJvYXV0aC1hdXRoei1yZXErand0IiwiYWxnIjoiRVMyNTYifQ.eyJjbGllbnRfaWQiOiJ0ZXN0In0.sig';
+
+			(globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+				ok: true,
+				text: async () => mockJWT,
+			});
+
+			const verifier: JWTVerifier = async () => ({
+				valid: false,
+				error: 'Invalid signature',
+			});
+
+			await expect(
+				plugin.handleRequestUri('https://verifier.example.com/request', { jwtVerifier: verifier }),
+			).rejects.toThrow('JWT signature verification failed: Invalid signature');
+		});
+
+		it('should skip verification if no verifier provided', async () => {
+			const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+			const mockJWT =
+				'eyJ0eXAiOiJvYXV0aC1hdXRoei1yZXErand0IiwiYWxnIjoiRVMyNTYifQ.eyJjbGllbnRfaWQiOiJ0ZXN0In0.sig';
+
+			(globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+				ok: true,
+				text: async () => mockJWT,
+			});
+
+			const result = await plugin.handleRequestUri('https://verifier.example.com/request');
+
+			expect(result.verified).toBe(false);
+			expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('JWT signature verification skipped'));
+
+			consoleSpy.mockRestore();
+		});
+
+		it('should extract certificate from x5c header', async () => {
+			const mockJWT =
+				'eyJ0eXAiOiJvYXV0aC1hdXRoei1yZXErand0IiwiYWxnIjoiRVMyNTYiLCJ4NWMiOlsiQ2VydDEiLCJDZXJ0MiJdfQ.eyJub25jZSI6IjEyMyJ9.sig';
+
+			(globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+				ok: true,
+				text: async () => mockJWT,
+			});
+
+			const verifier: JWTVerifier = async (_jwt, options) => {
+				expect((options as { certificate?: string }).certificate).toBe('Cert1');
+				return { valid: true };
+			};
+
+			await plugin.handleRequestUri('https://verifier.example.com/request', { jwtVerifier: verifier });
+		});
+
+		it('should handle verifier throwing error', async () => {
+			const mockJWT =
+				'eyJ0eXAiOiJvYXV0aC1hdXRoei1yZXErand0IiwiYWxnIjoiRVMyNTYifQ.eyJub25jZSI6IjEyMyJ9.sig';
+
+			(globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+				ok: true,
+				text: async () => mockJWT,
+			});
+
+			const verifier: JWTVerifier = async () => {
+				throw new Error('Verification failed');
+			};
+
+			await expect(
+				plugin.handleRequestUri('https://verifier.example.com/request', { jwtVerifier: verifier }),
+			).rejects.toThrow('JWT verification error: Verification failed');
+		});
+
+		it('should handle fetch failure', async () => {
+			(globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+				ok: false,
+				statusText: 'Not Found',
+			});
+
+			await expect(plugin.handleRequestUri('https://verifier.example.com/request')).rejects.toThrow(
+				'Failed to fetch request_uri: Not Found',
+			);
 		});
 	});
 });
