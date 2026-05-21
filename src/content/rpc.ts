@@ -53,16 +53,10 @@ export class RPC {
 
 				try {
 					const response = await handler(type, payload);
-					window.postMessage(
-						{ channel: this.#channel, id, response },
-						window.location.origin,
-					);
+					window.postMessage({ channel: this.#channel, id, response }, window.location.origin);
 				} catch (err) {
 					const error = err instanceof Error ? err : new Error(String(err));
-					window.postMessage(
-						{ channel: this.#channel, id, error },
-						window.location.origin,
-					);
+					window.postMessage({ channel: this.#channel, id, error }, window.location.origin);
 				}
 			}
 		});
