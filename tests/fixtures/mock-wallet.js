@@ -62,7 +62,7 @@ function walletApp() {
 		requestStatusText: 'Awaiting request...',
 		requestStatusClass: 'flash-warn',
 		canRespond: false,
-		openerWindow: null,
+		hasOpener: false,
 
 		// Activity log
 		log: [],
@@ -75,7 +75,7 @@ function walletApp() {
 					registered: this.registered,
 					walletId: this.walletId,
 					currentRequest: this.currentRequest,
-					openerWindow: this.openerWindow ? '[Window]' : null,
+					hasOpener: this.hasOpener ? '[Window]' : null,
 				},
 				null,
 				2,
@@ -316,10 +316,23 @@ function walletApp() {
 			}
 
 			this.currentRequest = request;
-			this.openerWindow = window.opener;
-			this.requestStatusText = 'Credential request received - awaiting user action';
-			this.requestStatusClass = 'flash-warn';
-			this.canRespond = true;
+			this.hasOpener = !!window.opener;
+
+			// Check if we can actually fulfill this request
+			const credentials = request.dcql_query?.credentials || [];
+			const hasMatchingCredential = credentials.some(isAcceptedCredential);
+
+			if (hasMatchingCredential) {
+				this.requestStatusText = 'Credential request received - awaiting user action';
+				this.requestStatusClass = 'flash-warn';
+				this.canRespond = true;
+			} else {
+				this.requestStatusText = 'No matching credentials available';
+				this.requestStatusClass = 'flash-error';
+				this.canRespond = false;
+				this.addLog(`No matching credentials for request. Requested: ${credentials.map(c => c.meta?.doctype_value || c.meta?.vct_values?.join(',')).join(', ')}`);
+			}
+
 			this.addLog(`Request received from ${request.client_id}`);
 		},
 
