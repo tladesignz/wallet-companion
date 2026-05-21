@@ -14,29 +14,11 @@ This project includes both **unit tests** and **integration tests** to ensure th
 
 ```
 tests/
-├── setup.ts                          # Vitest setup and mocks
-├── fixtures/                         # Test data and mock wallets
-│   └── mock-wallet.html
-├── unit/                             # Per-file unit tests (mirrors src/)
-│   ├── background/
-│   │   └── handlers.test.ts          # Background script tests
-│   ├── content/
-│   │   ├── index.test.ts             # Content script message bridge
-│   │   ├── inject.test.ts            # DC API & wallet registration tests
-│   │   ├── modal.test.ts             # Wallet selector modal tests
-│   │   ├── protocols/
-│   │   │   ├── ProtocolPluginRegistry.test.ts  # Protocol plugin tests
-│   │   │   └── plugins/
-│   │   │       └── OpenID4VPPlugin.test.ts     # OpenID4VP protocol tests
-│   │   └── public-api/
-│   │       └── DigitalCredentials.test.ts      # JWT callback tests
-│   └── ui/
-│       ├── options.test.ts           # Options page logic tests
-│       └── popup.test.ts             # Popup UI tests
-├── integration/                      # Component integration tests
-│   ├── wallet-flow.test.ts           # E2E integration tests
-│   └── wallet-registration.test.ts   # Wallet registration tests
-└── e2e/                              # Browser automation tests (Puppeteer)
+├── setup.ts         # Vitest setup and shared mocks
+├── fixtures/        # Test data and mock wallet assets
+├── unit/            # Unit tests mirroring src/ structure
+├── integration/     # Integration tests across components
+└── e2e/             # Browser automation end-to-end tests
 ```
 
 ## Running Tests
