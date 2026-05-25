@@ -1,4 +1,4 @@
-@import url('https://unpkg.com/@primer/css@^21/dist/primer.css');
+/* @import url('https://cdn.jsdelivr.net/npm/@primer/css@^21/dist/primer.css'); */
 
 /* Hide elements until Alpine.js initializes */
 [x-cloak] { display: none !important; }
@@ -33,22 +33,6 @@ body {
   color: var(--fgColor-muted);
   min-width: 100px;
   flex-shrink: 0;
-}
-
-#log {
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-#log .entry {
-  padding: var(--base-size-4) 0;
-  border-bottom: 1px solid var(--borderColor-muted);
-  font-size: var(--text-body-size-small);
-}
-
-#log .time {
-  color: var(--fgColor-muted);
-  margin-right: var(--base-size-8);
 }
 
 dialog {
