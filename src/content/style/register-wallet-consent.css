@@ -1,0 +1,92 @@
+.register-wallet {
+	margin: 0 0 auto auto;
+	position: fixed;
+	top: 32px;
+	right: 32px;
+	width: min(500px, calc(100vw - 64px));
+	background-color: var(--s-color-gray-200);
+	color: var(--s-color-gray-950);
+	border: var(--s-border-light);
+	border-radius: var(--s-border-radius-md);
+	animation: fadeInLeft 0.3s ease-out;
+
+	&.-closing {
+		animation: fadeOutRight 0.3s ease-out;
+	}
+
+	&::backdrop {
+		background: transparent;
+		pointer-events: none;
+	}
+
+	> .header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--s-space-3);
+	}
+
+	> .header > .title  {
+		margin: 0;
+		display: flex;
+		align-items: center;
+		gap: var(--s-space-2);
+		font-size: var(--s-font-size-md);
+	}
+
+	> .header > .title > .icon {
+		width: 24px;
+		height: 24px;
+		margin-right: 8px;
+	}
+
+	/* > .header > .close {} */
+
+	/*
+	> .content {}
+	> .content > .details {}
+	*/
+
+	> .content > .details > .detail {
+		display: flex;
+		gap: var(--s-space-2);
+	}
+
+	> .content > .details > .detail > .name {
+		font-weight: var(--s-font-weight-semibold);
+	}
+
+	> .content > .details > .detail > .value  {
+		margin: 0;
+		display: inline;
+		font-style: italic;
+	}
+
+	> .buttons {
+		display: flex;
+		gap: var(--s-space-2);
+		justify-content: flex-end;
+	}
+}
+
+@keyframes fadeInLeft {
+	from {
+		opacity: 0;
+		transform: translateX(80%);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+@keyframes fadeOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(80%);
+  }
+}

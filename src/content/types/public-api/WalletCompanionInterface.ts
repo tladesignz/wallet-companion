@@ -81,5 +81,5 @@ export interface WalletRegistrationResult {
 	/**
 	 * The wallet object with generated `id` and normalized values.
 	 */
-	wallet: Wallet;
+	wallet?: Wallet;
 }

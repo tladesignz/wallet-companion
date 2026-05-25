@@ -1,3 +1,4 @@
+import { registerWalletConsentModal } from '@content/modals/register-wallet-consent';
 import type { RPC } from '@content/rpc';
 import type { WalletCompanionInterface, WalletRegistrationResult } from '@content/types';
 import {
@@ -78,6 +79,18 @@ export class WalletCompanion implements WalletCompanionInterface {
 		}
 
 		const walletRegistration = parse(WalletRegistrationInputSchema, walletInfo);
+
+		const consentResult = await registerWalletConsentModal({
+			name: walletInfo.name,
+			url: walletInfo.url,
+		});
+
+		if (consentResult.status !== 'approved') {
+			return {
+				success: false,
+				alreadyRegistered: false,
+			};
+		}
 
 		const result = await this.#rpc.send<WalletRegistrationResult>('REGISTER_WALLET', {
 			wallet: walletRegistration,
