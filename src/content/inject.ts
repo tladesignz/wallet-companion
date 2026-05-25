@@ -9,6 +9,7 @@ import type { RequestData } from './protocols/plugins/types';
 import { WalletCompanion } from './public-api/WalletCompanion';
 import { RPC } from './rpc';
 import type { WalletOption } from './types';
+import { selectWalletModal } from './modals/select-wallet';
 
 console.debug('Digital Credentials API interceptor injected');
 
@@ -159,7 +160,7 @@ async function showWalletSelector(
 	requests: ProcessedRequest[],
 ): Promise<SelectionResult> {
 	return new Promise((resolve) => {
-		window.showWalletSelector({
+		selectWalletModal({
 			wallets,
 			onSelect(wallet: WalletOption) {
 				const selectedRequest =

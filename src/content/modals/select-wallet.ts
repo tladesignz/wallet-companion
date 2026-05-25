@@ -103,7 +103,7 @@ function createWalletItem(
 	return item;
 }
 
-function showWalletSelector(options: ShowWalletSelectorOptions): void {
+export function selectWalletModal(options: ShowWalletSelectorOptions): void {
 	const { wallets, onSelect, onNative, onCancel } = options;
 
 	document.getElementById(HOST_ID)?.remove();
@@ -162,5 +162,3 @@ function showWalletSelector(options: ShowWalletSelectorOptions): void {
 
 	shadow.append(style, fragment);
 }
-
-window.showWalletSelector = showWalletSelector;
