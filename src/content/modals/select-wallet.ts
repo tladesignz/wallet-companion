@@ -4,7 +4,7 @@
  * Uses a closed Shadow DOM for full style isolation from the host page.
  */
 
-import modalStyles from '@content/style/modal.css?inline';
+import modalStyles from '@content/style/select-wallet.css?inline';
 import type { ShowWalletSelectorOptions, WalletOption } from '@content/types';
 import globalStyles from '@shared/style/global.css?inline';
 
