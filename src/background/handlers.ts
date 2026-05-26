@@ -89,6 +89,7 @@ async function dispatchMessage(
 	}
 }
 
+/** @deprecated This function is no longer used since the wallet selector is now implemented as a content script modal instead of an injected script. */
 async function handleShowWalletSelector(
 	message: ShowWalletSelectorMessage,
 	sender: MessageSenderCompat,
@@ -404,6 +405,9 @@ async function sendMessage(message: OutboundMessage): Promise<void> {
 
 /**
  * Inject wallet modal into the page
+ *
+ * @deprecated This function is no longer used since the wallet selector is
+ *             now implemented as a content script modal instead of an injected script.
  */
 async function injectWalletModal(tabId: number | undefined, frameId?: number) {
 	if (tabId === undefined) return;

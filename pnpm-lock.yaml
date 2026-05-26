@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      lucide:
+        specifier: ^1.16.0
+        version: 1.16.0
       '@fontsource/inter':
         specifier: ^5.2.8
         version: 5.2.8
@@ -2037,6 +2040,9 @@ packages:
   lru-cache@11.5.0:
     resolution: {integrity: sha512-5YgH9UJd7wVb9hIouI2adWpgqrrICkt070Dnj8EUY1+B4B2P9eRLPAkAAo6NICA7CEhOIeBHl46u9zSNpNu7zA==}
     engines: {node: 20 || >=22}
+
+  lucide@1.16.0:
+    resolution: {integrity: sha512-20QvduCJTB7e7K9WVvoLBuKPsYZ8d6ptwe9PIdTFiZmjVTPdFWQreBNyNCM9QQtGnqHR0PLiEQdxyhYsL1LdoA==}
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
@@ -4867,6 +4873,8 @@ snapshots:
   lodash.startcase@4.4.0: {}
 
   lru-cache@11.5.0: {}
+
+  lucide@1.16.0: {}
 
   magic-string@0.30.21:
     dependencies:

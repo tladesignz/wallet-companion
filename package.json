@@ -41,6 +41,7 @@
     "webextension"
   ],
   "dependencies": {
+    "lucide": "^1.16.0",
     "@fontsource/inter": "^5.2.8",
     "valibot": "^1.4.0"
   },
