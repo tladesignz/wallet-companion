@@ -6,9 +6,9 @@ export default defineConfig({
 		environment: 'node',
 		setupFiles: ['./tests/setup.ts'],
 		include: [
-			'tests/integration/**/*.test.ts',
+			'tests/e2e/**/*.test.ts',
 		],
-		testTimeout: 30000, // Longer timeout for Puppeteer tests
+		testTimeout: 30000,
 		hookTimeout: 30000,
 	},
 });
