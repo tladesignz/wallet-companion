@@ -34,10 +34,10 @@ export const CHROME_MANIFEST = new BrowserManifest(({ entry, icons }) => ({
 	],
 	'action': {
 		'default_popup': entry('es', 'src/ui/popup.html'),
-		'default_icon': icons('src/ui/assets/icons/logo-dark.svg'),
+		'default_icon': icons('src/shared/assets/icons/logo-dark.svg'),
 	},
 	'options_page': entry('es', 'src/ui/options.html'),
-	'icons': icons('src/ui/assets/icons/logo-dark.svg'),
+	'icons': icons('src/shared/assets/icons/logo-dark.svg'),
 }));
 
 export const FIREFOX_MANIFEST = new BrowserManifest(({ entry, icons }) => ({
@@ -64,13 +64,13 @@ export const FIREFOX_MANIFEST = new BrowserManifest(({ entry, icons }) => ({
 	],
 	'browser_action': {
 		'default_popup': entry('es', 'src/ui/popup.html'),
-		'default_icon': icons('src/ui/assets/icons/logo-dark.svg'),
+		'default_icon': icons('src/shared/assets/icons/logo-dark.svg'),
 	},
 	'options_ui': {
 		'page': entry('es', 'src/ui/options.html'),
 		'open_in_tab': true
 	},
-	'icons': icons('src/ui/assets/icons/logo-dark.svg'),
+	'icons': icons('src/shared/assets/icons/logo-dark.svg'),
 	'browser_specific_settings': {
 		'gecko': {
 			'id': 'digital-credentials-wallet-selector@example.com',
@@ -104,11 +104,11 @@ export const SAFARI_MANIFEST = new BrowserManifest(({ entry, icons }) => ({
 	],
 	'browser_action': {
 		'default_popup': entry('es', 'src/ui/popup.html'),
-		'default_icon': icons('src/ui/assets/icons/logo-dark.svg'),
+		'default_icon': icons('src/shared/assets/icons/logo-dark.svg'),
 	},
 	'options_ui': {
 		'page': entry('es', 'src/ui/options.html'),
 		'open_in_tab': true
 	},
-	'icons': icons('src/ui/assets/icons/logo-dark.svg'),
+	'icons': icons('src/shared/assets/icons/logo-dark.svg'),
 }));
