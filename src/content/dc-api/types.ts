@@ -30,7 +30,7 @@ export type PreparedRequest<T = unknown> = T & {
  * - which fields must be normalized or defaulted
  * - which request shapes are valid for wallet handoff
  *
- * We use the protocal handlers to prepare the incoming requests to ensure they're in
+ * We use the protocol handlers to prepare the incoming requests to ensure they're in
  * the right format for the wallet. However, we shouldn't strive to strictly validate
  * or create trust, that is the wallets job.
  */
