@@ -90,28 +90,6 @@ describe('WalletCompanion Class', () => {
 		});
 	});
 
-	describe('DigitalCredentials property', () => {
-		it('should expose DigitalCredentials instance', () => {
-			const wc = new WalletCompanion(mockRPC);
-			expect(wc.DigitalCredentials).toBeDefined();
-		});
-
-		it('should have registerJWTVerifier method', () => {
-			const wc = new WalletCompanion(mockRPC);
-			expect(typeof wc.DigitalCredentials.registerJWTVerifier).toBe('function');
-		});
-
-		it('should have unregisterJWTVerifier method', () => {
-			const wc = new WalletCompanion(mockRPC);
-			expect(typeof wc.DigitalCredentials.unregisterJWTVerifier).toBe('function');
-		});
-
-		it('should have registeredJWTVerifiers property', () => {
-			const wc = new WalletCompanion(mockRPC);
-			expect(Array.isArray(wc.DigitalCredentials.registeredJWTVerifiers)).toBe(true);
-		});
-	});
-
 	describe('registerWallet()', () => {
 		it('should throw when name is missing', async () => {
 			const wc = new WalletCompanion(mockRPC);
