@@ -45,7 +45,7 @@ describe('DCGateway', () => {
 			const requests = [
 				{
 					protocol: OpenID4VPProtocols.NORMAL,
-					data: { dcql_query: { credentials: [] } },
+					data: { dcql_query: { credentials: [{ id: 'cred-1', format: 'dc+sd-jwt', meta: { vct_values: ['TestCredential'] } }] } },
 				},
 			];
 
@@ -58,7 +58,7 @@ describe('DCGateway', () => {
 
 		it('should silently drop invalid requests', () => {
 			const requests = [
-				{ protocol: OpenID4VPProtocols.NORMAL, data: { dcql_query: { credentials: [] } } },
+				{ protocol: OpenID4VPProtocols.NORMAL, data: { dcql_query: { credentials: [{ id: 'cred-1', format: 'dc+sd-jwt', meta: { vct_values: ['TestCredential'] } }] } } },
 				{ protocol: OpenID4VPProtocols.NORMAL, data: 'invalid' },
 				{ protocol: OpenID4VPProtocols.NORMAL, data: { nonce: 'missing-query' } },
 			];
