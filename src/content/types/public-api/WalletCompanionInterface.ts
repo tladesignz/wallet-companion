@@ -1,5 +1,4 @@
 import type { Wallet, WalletRegistrationInput } from '@shared/schemas/resources';
-import type { DigitalCredentialsInterface } from './DigitalCredentialsInterface';
 
 /**
  * Public API for the WalletCompanion browser extension.
@@ -12,9 +11,6 @@ import type { DigitalCredentialsInterface } from './DigitalCredentialsInterface'
  *     url: 'https://wallet.example.com',
  *     protocols: ['openid4vp'],
  *   });
- *
- *   // DC API-specific
- *   window.WalletCompanion.DigitalCredentials;
  * }
  * ```
  */
@@ -57,11 +53,6 @@ export interface WalletCompanionInterface {
 	 * @throws {Error} If check times out (5s)
 	 */
 	isWalletRegistered(url: string): Promise<boolean>;
-
-	/**
-	 * Digital Credentials API-specific features.
-	 */
-	readonly DigitalCredentials: DigitalCredentialsInterface;
 }
 
 /**

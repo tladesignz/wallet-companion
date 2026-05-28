@@ -6,14 +6,11 @@ import {
 	WalletRegistrationInputSchema,
 } from '@shared/schemas/resources';
 import { parse } from 'valibot';
-import { DigitalCredentials } from './DigitalCredentials';
 
 /**
  * Public API exposed to web pages when the WalletCompanion extension is installed.
  */
 export class WalletCompanion implements WalletCompanionInterface {
-	readonly DigitalCredentials = new DigitalCredentials();
-
 	/** Cached protocols supported by registered wallets. */
 	#supportedProtocols = new Set<string>();
 	#rpc: RPC;

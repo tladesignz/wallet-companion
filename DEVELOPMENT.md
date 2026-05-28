@@ -144,9 +144,8 @@ start test-wallet-api.html  # Windows
 ```
 
 **Features tested:**
-- Extension detection (`WalletCompanion.DigitalCredentials.isInstalled`)
+- Extension detection (`WalletCompanion.isInstalled`)
 - Wallet registration with protocols
-- JWT verifier registration
 - API error handling
 
 ### Unit Tests
@@ -158,8 +157,7 @@ Run the complete test suite:
 pnpm test
 
 # Run specific test files
-pnpm vitest run tests/openid4vp.test.js
-pnpm vitest run tests/jwt-verification.test.js
+pnpm vitest run tests/unit/content/dc-api/handlers/openid4vp.test.ts
 
 # Run with coverage
 pnpm test:coverage
@@ -173,17 +171,15 @@ pnpm test:watch
 
 ### Test Coverage
 
-Current test coverage:
-- ✅ 332 tests passing (9 test suites)
-- ✅ OpenID4VP: Request parsing, JAR handling, response validation (36 tests)
-- ✅ JWT Verification: Registration, callback execution, integration (21 tests)
-- ✅ Protocol plugins: Registration, filtering, request processing (20 tests)
-- ✅ Inject script: DC API interception, URL building (61 tests)
-- ✅ Options page: Wallet management, presets, settings (59 tests)
-- ✅ Popup: UI state, wallet display (33 tests)
-- ✅ Modal: Wallet selector UI (45 tests)
-- ✅ Content script: Message bridge (44 tests)
-- ✅ Background: Storage, settings (13 tests)
+Test coverage includes:
+- OpenID4VP: Request parsing, DCQL handling, response validation
+- Protocol handlers: Request preparation, URL building
+- Inject script: DC API interception, URL building
+- Options page: Wallet management, presets, settings
+- Popup: UI state, wallet display
+- Modal: Wallet selector UI
+- Content script: Message bridge
+- Background: Storage, settings
 
 ### Integration Tests
 
@@ -399,13 +395,13 @@ web-wallet-selector/
 
 ### Key Files
 
-- **`src/content/inject.js`** - Injected into page context, intercepts `navigator.credentials.get()`, exposes `window.WalletCompanion` API
-- **`src/content/index.js`** - Content script, bridges inject script and background script
-- **`src/background/index.js`** - Service worker (Chrome) / background script (Firefox/Safari), manages wallets and state
-- **`src/content/protocols.js`** - Protocol plugin registry and base classes
-- **`src/content/protocols/OpenID4VPPlugin.js`** - Complete OpenID4VP protocol implementation
-- **`src/content/modal.js`** - Wallet selection modal UI
-- **`src/ui/options.js`** - Wallet management options page
+- **`src/content/inject.ts`** - Injected into page context, intercepts `navigator.credentials.get()`, exposes `window.WalletCompanion` API
+- **`src/content/index.ts`** - Content script, bridges inject script and background script
+- **`src/background/index.ts`** - Service worker (Chrome) / background script (Firefox/Safari), manages wallets and state
+- **`src/content/dc-api/gateway.ts`** - DC API gateway for wallet invocation
+- **`src/content/dc-api/handlers/openid4vp.ts`** - OpenID4VP protocol handler
+- **`src/content/modals/`** - Modal UI components
+- **`src/ui/options.ts`** - Wallet management options page
 - **`manifests/index.ts`** - Browser extension manifest definitions
 
 ## Debugging

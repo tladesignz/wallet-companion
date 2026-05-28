@@ -43,11 +43,11 @@ Verifier Website                Browser Extension              Web Wallet
 
 ### Key Components
 
-1. **OpenID4VPPlugin** (`src/protocols/OpenID4VPPlugin.js`)
+1. **OpenID4VP Handler** (`src/content/dc-api/handlers/openid4vp.ts`)
    - Parses authorization requests
    - Validates request parameters
    - Formats requests for wallets
-   - Validates responses from wallets
+   - Builds wallet invocation URLs
 
 2. **Request Formats Supported**
    - Direct parameters in URL
@@ -356,19 +356,18 @@ const credential = await navigator.credentials.get({
 
 ## Testing
 
-The implementation includes 36 comprehensive tests covering:
+The implementation includes comprehensive tests covering:
 
 - ✅ Request parsing (URL and direct parameters)
 - ✅ Parameter validation
 - ✅ Client ID scheme validation
 - ✅ Response mode validation
-- ✅ Response structure validation
-- ✅ Presentation submission validation
-- ✅ Wallet formatting
+- ✅ Wallet URL building
+- ✅ DCQL query handling
 
 Run tests:
 ```bash
-npm test -- tests/openid4vp.test.js
+pnpm test tests/unit/content/dc-api/handlers/openid4vp.test.ts
 ```
 
 ## References

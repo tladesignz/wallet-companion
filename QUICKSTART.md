@@ -97,13 +97,11 @@ const credential = await navigator.credentials.get({
 
 ## For Wallets (Self-Registration)
 
-Register your wallet and provide JWT verification:
+Register your wallet with the extension:
 
 ```javascript
 // Check if extension is installed
 if (window.WalletCompanion?.isInstalled) {
-  
-  // 1. Register your wallet
   await window.WalletCompanion.registerWallet({
     name: 'MyWallet',
     url: 'https://wallet.example.com',
@@ -112,21 +110,6 @@ if (window.WalletCompanion?.isInstalled) {
     icon: '🔐',  // Emoji or URL to icon
     color: '#3b82f6'  // Brand color (hex)
   });
-  
-  // 2. Register JWT verifier (optional but recommended)
-  window.WalletCompanion.DigitalCredentials.registerJWTVerifier(
-    'https://wallet.example.com',
-    async (jwt, options) => {
-      // Use your wallet's crypto library to verify the JWT
-      const result = await myWalletCrypto.verifyJWT(jwt, options);
-      
-      return {
-        valid: true,
-        payload: result.payload,
-        header: result.header
-      };
-    }
-  );
 }
 ```
 
@@ -157,31 +140,6 @@ if (window.WalletCompanion?.isInstalled) {
     });
   }
   
-  // Register JWT verifier using wallet's crypto library
-  window.WalletCompanion.DigitalCredentials.registerJWTVerifier(walletUrl, async (jwt, options) => {
-    // Import your wallet's crypto functions
-    const { verifyJWT } = await import('./crypto.js');
-    
-    try {
-      const result = await verifyJWT(jwt, {
-        publicKey: options.publicKey,
-        certificate: options.certificate,
-        algorithm: options.algorithm || 'ES256'
-      });
-      
-      return {
-        valid: true,
-        payload: result.payload,
-        header: result.header
-      };
-    } catch (error) {
-      return {
-        valid: false,
-        error: error.message
-      };
-    }
-  });
-  
   console.log('Wallet integration complete');
 })();
 ```
@@ -211,5 +169,4 @@ open test-wallet-api.html
 - **[Complete API Reference](API_REFERENCE.md)** - Full API documentation with all methods and options
 - **[Development Guide](DEVELOPMENT.md)** - Building, testing, and developing the extension
 - **[OpenID4VP Documentation](docs/design/OPENID4VP_IMPLEMENTATION.md)** - Comprehensive OpenID4VP protocol guide
-- **[JWT Verification Guide](docs/design/JWT_VERIFICATION_CALLBACKS.md)** - Complete JWT callback documentation
 - **[Wallet Management](WALLET_MANAGEMENT.md)** - User guide for managing wallets
