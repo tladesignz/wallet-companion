@@ -6,16 +6,7 @@ import {
 	OpenID4VPResponseModeSchema,
 	OpenID4VPResponseTypeSchema,
 } from '@shared/schemas/protocols';
-import {
-	check,
-	type InferInput,
-	optional,
-	pipe,
-	safeParse,
-	strictObject,
-	string,
-	unknown,
-} from 'valibot';
+import { check, type InferInput, optional, pipe, safeParse, strictObject, string } from 'valibot';
 import type { DCProtocolHandler, PreparedRequest } from '../types';
 
 type OpenID4VPDCRequest = InferInput<typeof OpenID4VPDCRequestSchema>;
