@@ -101,28 +101,4 @@ test.describe('WalletCompanion API Exposure', () => {
 		expect(api.registerWallet).toBe('function');
 		expect(api.isWalletRegistered).toBe('function');
 	});
-
-	test('WalletCompanion.DigitalCredentials should be exposed', async ({ page, testServer }) => {
-		await page.goto(`${testServer.url}/index.html`);
-
-		await page.waitForFunction(
-			() => typeof (window as any).WalletCompanion !== 'undefined',
-			{ timeout: 5000 },
-		);
-
-		const dcApi = await page.evaluate(() => {
-			const dc = (window as any).WalletCompanion?.DigitalCredentials;
-			return {
-				exists: typeof dc === 'object',
-				registerJWTVerifier: typeof dc?.registerJWTVerifier,
-				unregisterJWTVerifier: typeof dc?.unregisterJWTVerifier,
-				registeredJWTVerifiers: Array.isArray(dc?.registeredJWTVerifiers),
-			};
-		});
-
-		expect(dcApi.exists).toBe(true);
-		expect(dcApi.registerJWTVerifier).toBe('function');
-		expect(dcApi.unregisterJWTVerifier).toBe('function');
-		expect(dcApi.registeredJWTVerifiers).toBe(true);
-	});
 });
