@@ -19,7 +19,6 @@ const rpc = new RPC();
 const publicAPI = new WalletCompanion(rpc);
 const dcGateway = new DCGateway();
 
-
 // Override DigitalCredential.userAgentAllowsProtocol
 if (typeof DigitalCredential !== 'undefined') {
 	const original = DigitalCredential.userAgentAllowsProtocol?.bind(DigitalCredential);

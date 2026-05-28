@@ -23,7 +23,7 @@ const OpenID4VPDCRequestSchema = pipe(
 		nonce: optional(string()),
 		state: optional(string()),
 		client_metadata: optional(unknown()), // TODO: types this.
-		dcql_query: optional(DCQLQuerySchema), // TODO: type this.
+		dcql_query: optional(DCQLQuerySchema),
 		response_type: optional(OpenID4VPResponseTypeSchema),
 		response_mode: optional(OpenID4VPResponseModeSchema),
 	}),
