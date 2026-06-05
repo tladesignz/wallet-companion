@@ -44,11 +44,11 @@
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
     "@sirosfoundation/browser-log": "0.1.0-beta.1",
-    "lucide": "^1.16.0",
+    "lucide": "^1.17.0",
     "valibot": "^1.4.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.15",
+    "@biomejs/biome": "^2.4.16",
     "@changesets/changelog-github": "^0.7.0",
     "@changesets/cli": "^2.31.0",
     "@playwright/test": "^1.60.0",
@@ -57,9 +57,9 @@
     "@types/node": "^25.9.1",
     "@vitest/coverage-v8": "^4.1.7",
     "jsdom": "^29.1.1",
-    "puppeteer": "^25.0.4",
+    "puppeteer": "^25.1.0",
     "sharp": "^0.34.5",
-    "tsx": "^4.22.3",
+    "tsx": "^4.22.4",
     "typescript": "^6.0.3",
     "vite": "^8.0.14",
     "vitest": "^4.1.7",
