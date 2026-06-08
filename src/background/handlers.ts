@@ -89,7 +89,6 @@ async function dispatchMessage(
 	}
 }
 
-/** @deprecated This function is no longer used since the wallet selector is now implemented as a content script modal instead of an injected script. */
 async function handleShowWalletSelector(
 	message: ShowWalletSelectorMessage,
 	sender: MessageSenderCompat,
