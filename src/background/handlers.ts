@@ -125,9 +125,6 @@ async function handleShowWalletSelector(
 		return { useNative: true };
 	}
 
-	// Inject modal and show wallet selector
-	await injectWalletModal(sender.tab?.id, sender.frameId);
-
 	// Send matching wallets to content script
 	return { wallets: matchingWallets };
 }
@@ -401,25 +398,4 @@ async function _getWalletsForProtocol(protocol: string) {
 async function sendMessage(message: OutboundMessage): Promise<void> {
 	message = parse(OutboundMessageSchema, message);
 	runtimeSendMessage(message);
-}
-
-/**
- * Inject wallet modal into the page
- *
- * @deprecated This function is no longer used since the wallet selector is
- *             now implemented as a content script modal instead of an injected script.
- */
-async function injectWalletModal(tabId: number | undefined, frameId?: number) {
-	if (tabId === undefined) return;
-	const tabs = typeof browser !== 'undefined' ? browser.tabs : chrome.tabs;
-
-	try {
-		await tabs.executeScript(tabId, {
-			file: 'modal.js',
-			frameId: frameId || 0,
-			runAt: 'document_end',
-		});
-	} catch (error) {
-		console.error('Failed to inject modal:', error);
-	}
 }
