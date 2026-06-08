@@ -1,13 +1,13 @@
 # Wallet Companion
 
-A browser extension supporting web wallets with additional features and compatibility with digital identity standards.
+A browser extension that enhances web wallets with standards-based credential flows, auto-registration, and protocol-aware routing.
 
-[![Version](https://img.shields.io/badge/version-0.0.0-blue)](package.json)
-[![Test](https://github.com/sirosfoundation/web-wallet-selector/actions/workflows/test.yml/badge.svg)](https://github.com/sirosfoundation/web-wallet-selector/actions/workflows/test.yml)
-[![Lint](https://github.com/sirosfoundation/web-wallet-selector/actions/workflows/lint.yml/badge.svg)](https://github.com/sirosfoundation/web-wallet-selector/actions/workflows/lint.yml)
-[![Security](https://github.com/sirosfoundation/web-wallet-selector/actions/workflows/security.yml/badge.svg)](https://github.com/sirosfoundation/web-wallet-selector/actions/workflows/security.yml)
-[![CodeQL](https://github.com/sirosfoundation/web-wallet-selector/actions/workflows/codeql.yml/badge.svg)](https://github.com/sirosfoundation/web-wallet-selector/actions/workflows/codeql.yml)
-[![SBOM](https://github.com/sirosfoundation/web-wallet-selector/actions/workflows/sbom.yml/badge.svg)](https://github.com/sirosfoundation/web-wallet-selector/actions/workflows/sbom.yml)
+![GitHub package.json version](https://img.shields.io/github/package-json/v/sirosfoundation/wallet-companion)
+[![Test](https://github.com/sirosfoundation/wallet-companion/actions/workflows/test.yml/badge.svg)](https://github.com/sirosfoundation/wallet-companion/actions/workflows/test.yml)
+[![Lint](https://github.com/sirosfoundation/wallet-companion/actions/workflows/lint.yml/badge.svg)](https://github.com/sirosfoundation/wallet-companion/actions/workflows/lint.yml)
+[![Security](https://github.com/sirosfoundation/wallet-companion/actions/workflows/security.yml/badge.svg)](https://github.com/sirosfoundation/wallet-companion/actions/workflows/security.yml)
+[![CodeQL](https://github.com/sirosfoundation/wallet-companion/actions/workflows/codeql.yml/badge.svg)](https://github.com/sirosfoundation/wallet-companion/actions/workflows/codeql.yml)
+[![SBOM](https://github.com/sirosfoundation/wallet-companion/actions/workflows/sbom.yml/badge.svg)](https://github.com/sirosfoundation/wallet-companion/actions/workflows/sbom.yml)
 
 ## Why?
 
@@ -15,10 +15,10 @@ Wallet Companion helps web wallets align closely with standards such as the W3C 
 
 ## Features
 
-- [Digital Credentials API support](#digital-credentials-dc-api-support)
 - [Wallet auto-registration API](#wallet-auto-registration-api)
+- [Digital Credentials API support](#digital-credentials-dc-api-support)
 - [Protocol-aware wallet routing](#protocol-aware-wallet-routing)
-- [Cross-browser runtime](#cross-browser-runtime)
+- Cross-browser support (Chrome, Firefox, Safari)
 
 ### Wallet auto-registration API
 
@@ -32,9 +32,9 @@ Related docs:
 
 Wallet Companion integrates with `navigator.credentials.get()` and routes eligible requests through compatible wallets. This keeps verifier integration aligned with the standard API surface while giving users a wallet selection step when multiple wallets can satisfy the request.
 
-Current focus:
+We support:
 - OpenID4VP request handling for DC API flows.
-- Support for OpenID4VP variants: `openid4vp`, `openid4vp-v1-unsigned`, `openid4vp-v1-signed`, `openid4vp-v1-multisigned`.
+- OpenID4VP variants: `openid4vp`, `openid4vp-v1-unsigned`, `openid4vp-v1-signed`, `openid4vp-v1-multisigned`.
 
 Related docs:
 - [docs/QUICKSTART.md](docs/QUICKSTART.md)
@@ -46,14 +46,6 @@ When a request arrives, Wallet Companion filters wallet options by supported pro
 
 Related docs:
 - [docs/design/PROTOCOL_SUPPORT.md](docs/design/PROTOCOL_SUPPORT.md)
-
-### Cross-browser runtime
-
-Wallet Companion runs across Chrome, Firefox, and Safari.
-
-Related docs:
-- [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
-
 
 ## Development Instructions
 
@@ -254,8 +246,8 @@ See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#contributing) for contribution wor
 
 ## Support
 
-- Issues: [GitHub Issues](https://github.com/sirosfoundation/web-wallet-selector/issues)
-- Discussions: [GitHub Discussions](https://github.com/sirosfoundation/web-wallet-selector/discussions)
+- Issues: [GitHub Issues](https://github.com/sirosfoundation/wallet-companion/issues)
+- Discussions: [GitHub Discussions](https://github.com/sirosfoundation/wallet-companion/discussions)
 - Documentation: see links above
 
 ## License
