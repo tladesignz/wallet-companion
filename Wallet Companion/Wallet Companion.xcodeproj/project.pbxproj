@@ -121,6 +121,11 @@
 			path = ../dist/safari;
 			sourceTree = SOURCE_ROOT;
 		};
+		A0AF8AF92FD6D38200D544C6 /* fastlane */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = fastlane;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -160,6 +165,7 @@
 			children = (
 				A0AF89F72FD6C88800D544C6 /* README.md */,
 				A0AF8A8A2FD6CF7500D544C6 /* docs */,
+				A0AF8AF92FD6D38200D544C6 /* fastlane */,
 				A0DBB2A52EE2E68500109241 /* Config.xcconfig */,
 				A0444DC32EE1CC4800E7155E /* Shared (App) */,
 				A0444DCC2EE1CC4900E7155E /* Shared (Extension) */,
