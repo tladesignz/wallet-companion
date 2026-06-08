@@ -6,7 +6,7 @@ This document describes the protocol-aware business logic implemented in the Wal
 
 The extension now includes sophisticated protocol filtering and plugin architecture to:
 
-1. **Filter credential requests by supported protocols** - Only intercept requests for protocols supported by registered web wallets
+1. **Filter credential requests by supported protocols** - Only handle requests for protocols supported by registered web wallets
 2. **Pass unsupported protocols to native API** - Silently delegate unsupported protocols to the browser's native implementation
 3. **Plugin-based request/response processing** - Extensible architecture for protocol-specific validation and formatting
 4. **Override `userAgentAllowsProtocol()`** - Report protocols supported by registered web wallets
@@ -18,7 +18,7 @@ The extension now includes sophisticated protocol filtering and plugin architect
 ```
 1. Website calls navigator.credentials.get({ digital: { requests: [...] } })
    ↓
-2. inject.js intercepts the call
+2. inject.js handles the call
    ↓
 3. Extract protocols from digital.requests[]
    ↓
@@ -328,7 +328,7 @@ registry.register(new CustomProtocolPlugin());
 
 **Run protocol tests:**
 ```bash
-pnpm test:unit  # Includes 35 protocol plugin tests
+make test-unit  # Includes protocol plugin tests
 ```
 
 **Test Coverage:**

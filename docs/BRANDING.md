@@ -50,7 +50,7 @@ Extension icons are automatically generated from `logo-light.svg` in multiple si
 
 ### Generating Icons
 
-Icons are automatically generated during `pnpm build` by the Vite build plugin using `sharp`. No separate command is needed.
+Icons are automatically generated during `make build` by the Vite build plugin using `sharp`. No separate command is needed.
 
 ## Typography
 
@@ -112,7 +112,7 @@ To update the logo or colors:
 
 1. **Update Logo**: Replace `src/icons/logo-light.svg` and/or `logo-dark.svg`
 2. **Update Colors**: Search for color hex codes in `src/` and replace
-3. **Rebuild**: Run `pnpm build` (icons are regenerated automatically)
+3. **Rebuild**: Run `make build` (icons are regenerated automatically)
 
 ### Color References
 

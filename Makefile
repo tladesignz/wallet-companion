@@ -4,7 +4,7 @@
 		watch watch-chrome watch-firefox watch-safari \
 		package package-chrome package-firefox \
 		dev-chrome dev-firefox dev-safari \
-		lint lint-fix format test test-watch test-coverage test-all typecheck \
+		lint lint-fix format test test-unit test-integration test-e2e test-e2e-headed test-server test-watch test-coverage test-all typecheck \
 		check-deps status all rebuild \
 		changeset version tag prerelease-mode
 
@@ -93,6 +93,21 @@ typecheck: ## Type check
 # Testing
 test: ## Run tests
 	pnpm test
+
+test-unit: ## Run unit tests
+	pnpm test:unit
+
+test-integration: ## Run integration tests
+	pnpm test:integration
+
+test-e2e: ## Run end-to-end tests
+	pnpm test:e2e
+
+test-e2e-headed: ## Run end-to-end tests in headed mode
+	pnpm test:e2e:headed
+
+test-server: ## Run local fixtures test server
+	pnpm test:server
 
 test-watch: ## Run tests in watch mode
 	pnpm test:watch

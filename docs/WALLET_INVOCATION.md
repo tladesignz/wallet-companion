@@ -10,7 +10,7 @@ When a user selects a wallet from the wallet selector modal, the extension invok
 
 ```
 1. Website calls navigator.credentials.get()
-2. Extension intercepts the call (inject.js)
+2. Extension handles the call (inject.js)
 3. Extension shows wallet selector modal (modal.js)
 4. User selects a wallet
 5. Extension builds wallet authorization URL (inject.js: buildWalletUrl)

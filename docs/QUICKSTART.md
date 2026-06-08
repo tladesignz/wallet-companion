@@ -1,272 +1,151 @@
 # Quick Start Guide
 
-## First Time Setup
+Get started with the Wallet Companion extension in minutes.
 
-1. **Install dependencies:**
-   ```bash
-   pnpm install
-   # or
-   make install
-   ```
+## For Verifiers (Websites Requesting Credentials)
 
-2. **Build all extensions:**
-   ```bash
-   pnpm build
-   # or
-   make build
-   ```
-
-3. **Check build status:**
-   ```bash
-   make status
-   ```
-
-## Loading the Extension
-
-### Chrome
-
-1. Open Chrome and go to `chrome://extensions/`
-2. Enable "Developer mode" (toggle in top-right)
-3. Click "Load unpacked"
-4. Select the `chrome/` folder
-5. The extension icon should appear in your toolbar
-
-### Firefox
-
-**Option 1: Temporary Installation**
-1. Open Firefox and go to `about:debugging#/runtime/this-firefox`
-2. Click "Load Temporary Add-on"
-3. Navigate to `firefox/` folder and select `manifest.json`
-
-**Option 2: Using web-ext**
-```bash
-pnpm dev:firefox
-```
-This will open Firefox with the extension automatically loaded.
-
-### Safari
-
-Safari requires additional setup:
-
-1. **Convert to Safari Extension:**
-   ```bash
-   xcrun safari-web-extension-converter dist/safari/ --app-name "Wallet Companion"
-   ```
-
-2. **Open in Xcode:**
-   - Open the generated `.xcodeproj` file
-   - Click "Run" (Cmd+R)
-
-3. **Enable in Safari:**
-   - Open Safari → Preferences
-   - Go to Extensions tab
-   - Enable "Wallet Companion"
-   - Grant any requested permissions
-
-## Customizing for Your DC API
-
-You need to configure the extension to recognize your specific DC API endpoints:
-
-### 1. Edit URL Patterns
-
-In `src/background.js`, find the `isDCApiCall` function:
+Use the standard W3C Digital Credentials API with OpenID4VP protocol:
 
 ```javascript
-function isDCApiCall(url) {
-  const dcApiPatterns = [
-    /dc\.api\.example\.com/,      // Replace with your domain
-    /datacenter\.api\./,           // Add more patterns
-    // Add your patterns here
-  ];
-  return dcApiPatterns.some(pattern => pattern.test(url));
+const credential = await navigator.credentials.get({
+  digital: {
+    requests: [{
+      protocol: "openid4vp",
+      data: {
+        client_id: "https://verifier.example.com",
+        response_type: "vp_token",
+        response_mode: "direct_post",
+        response_uri: "https://verifier.example.com/callback",
+        nonce: "n-0S6_WzA2Mj",
+        dcql_query: {
+          credentials: [{
+            id: "org.example.identity",
+            format: "vc+sd-jwt",
+            claims: [
+              { path: ["given_name"] },
+              { path: ["family_name"] }
+            ]
+          }]
+        }
+      }
+    }]
+  }
+});
+```
+
+### OpenID4VP Request Formats
+
+**1. JAR - JWT-secured Authorization Request (By Reference)**
+
+```javascript
+const credential = await navigator.credentials.get({
+  digital: {
+    requests: [{
+      protocol: "openid4vp",
+      data: {
+        client_id: "https://verifier.example.com",
+        request_uri: "https://verifier.example.com/request/abc123"
+      }
+    }]
+  }
+});
+```
+
+**2. DCQL - Digital Credentials Query Language**
+
+```javascript
+const credential = await navigator.credentials.get({
+  digital: {
+    requests: [{
+      protocol: "openid4vp",
+      data: {
+        client_id: "https://verifier.example.com",
+        dcql_query: {
+          credentials: [{
+            id: "org.example.driver_license",
+            claims: [
+              { path: ["document_number"] },
+              { path: ["driving_privileges"] }
+            ]
+          }]
+        }
+      }
+    }]
+  }
+});
+```
+
+## For Wallets (Self-Registration)
+
+Register your wallet with the extension:
+
+```javascript
+// Check if extension is installed
+if (window.WalletCompanion?.isInstalled) {
+  await window.WalletCompanion.registerWallet({
+    name: 'MyWallet',
+    url: 'https://wallet.example.com',
+    protocols: ['openid4vp'],  // Required: supported protocols
+    description: 'My digital identity wallet',
+    color: '#3b82f6'  // Brand color (hex)
+  });
 }
 ```
 
-### 2. Edit the same function in `src/content.js`:
+### Complete Wallet Integration Example
 
 ```javascript
-function isDCApiUrl(url) {
-  if (!url) return false;
+// wallet-integration.js
+(async function() {
+  // Wait for extension to be ready
+  if (!window.WalletCompanion?.isInstalled) {
+    console.log('Extension not installed');
+    return;
+  }
   
-  const dcApiPatterns = [
-    /dc\.api\.example\.com/,      // Replace with your domain
-    /datacenter\.api\./,           // Add more patterns
-    // Add your patterns here
-  ];
+  // Check if already registered
+  const walletUrl = 'https://wallet.example.com';
+  const isRegistered = await window.WalletCompanion.isWalletRegistered(walletUrl);
   
-  return dcApiPatterns.some(pattern => pattern.test(url));
-}
+  if (!isRegistered) {
+    // Register the wallet
+    await window.WalletCompanion.registerWallet({
+      name: 'Example Wallet',
+      url: walletUrl,
+      protocols: ['openid4vp'],
+      description: 'Secure digital identity wallet with biometric support',
+      icon: 'https://wallet.example.com/icon.png',
+      color: '#1a73e8'
+    });
+  }
+  
+  console.log('Wallet integration complete');
+})();
 ```
 
-### 3. Rebuild
+## Testing Your Integration
 
-After making changes:
-```bash
-pnpm build
-```
+### Test the Digital Credentials API
 
-Then reload the extension in your browser.
-
-## Testing the Extension
-
-1. **Enable the Extension:**
-   - Load it in your browser as described above
-
-2. **Visit a Test Page:**
-   - Go to a website that makes DC API calls
-   - Or create a simple test HTML file with API calls
-
-3. **Check Console Output:**
-   - Open browser DevTools (F12)
-   - Look for messages like "Intercepted DC API call: ..."
-
-4. **Check Extension Popup:**
-   - Click the extension icon
-   - Verify status is "Active"
-   - Check if intercept count increases
-
-## Example Test Page
-
-Create `test.html`:
-
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <title>DC API Test</title>
-</head>
-<body>
-  <h1>DC API Extension Test</h1>
-  <button onclick="testAPI()">Test DC API Call</button>
-  
-  <script>
-    function testAPI() {
-      // Replace with your actual DC API endpoint
-      fetch('https://dc.api.example.com/data')
-        .then(response => response.json())
-        .then(data => console.log('Response:', data))
-        .catch(err => console.error('Error:', err));
-    }
-  </script>
-</body>
-</html>
-```
-
-Open this file in your browser and click the button. Check the console for interception messages.
-
-## Development Workflow
-
-### Make Changes & Auto-Rebuild
-
-Use watch mode for automatic rebuilds:
+Open the included test page:
 
 ```bash
-# Terminal 1 - Watch for changes
-pnpm watch:chrome
-
-# Terminal 2 - Your code editor
-# Edit files in src/
+make test-server
+# then open http://127.0.0.1:3456/ in your browser
 ```
 
-Every time you save a file in `src/`, the extension will be rebuilt automatically.
+### Test Wallet Registration
 
-### Reload Extension
+Open the wallet API test page:
 
-After changes are built, reload the extension:
-
-- **Chrome:** Go to `chrome://extensions/` and click the reload icon
-- **Firefox:** Click "Reload" in `about:debugging`
-- **Safari:** Rebuild and run in Xcode
-
-## Common Issues
-
-### "Extension not working"
-- Check browser console for errors
-- Verify extension is enabled
-- Check URL patterns match your API endpoints
-- Reload the extension after changes
-
-### "No API calls intercepted"
-- Verify the URL patterns in `isDCApiCall()` functions
-- Check permissions in manifest.json
-- Ensure content script is injected (`run_at: document_start`)
-- Look for errors in console
-
-### "Build fails"
-- Ensure Node.js is installed
-- Run `pnpm install` first
-- Check that `src/` directory has all required files
+```bash
+make test-server
+# then open http://127.0.0.1:3456/mock-wallet.html
+```
 
 ## Next Steps
 
-1. **Customize DC API detection** - Update URL patterns
-2. **Implement your logic** - Add functionality in `processRequest()`
-3. **Test thoroughly** - Try different scenarios
-4. **Add icons** - Create and add icon images
-5. **Update metadata** - Edit manifest.json files with your info
-
-## Getting Help
-
-- Check `DEVELOPMENT.md` for detailed architecture info
-- Review browser-specific READMEs in each folder
-- Check browser extension documentation (links in main README)
-
-## Quick Commands Reference
-
-### Using Make
-
-```bash
-# Show all available commands
-make help
-
-# Build all browsers
-make build
-
-# Build specific browser
-make build-chrome
-make build-firefox
-make build-safari
-
-# Watch mode (auto-rebuild on changes)
-make watch-chrome
-make watch-firefox
-make watch-safari
-
-# Package for distribution
-make package              # Chrome and Firefox
-make package-chrome       # Chrome only
-make package-firefox      # Firefox only
-
-# Development helpers
-make dev-firefox          # Run Firefox with extension
-make status               # Check build status
-make check-deps           # Verify dependencies
-make clean                # Clean built files
-make all                  # Clean, install, build, package
-```
-
-### Using pnpm
-
-```bash
-# Build all
-pnpm build
-
-# Build specific browser
-pnpm build:chrome
-pnpm build:firefox
-pnpm build:safari
-
-# Watch mode
-pnpm watch:chrome
-pnpm watch:firefox
-
-# Package for distribution
-pnpm package:chrome
-pnpm package:firefox
-
-# Clean built files
-pnpm clean
-
-# Firefox development server
-pnpm dev:firefox
-```
+- **[Complete API Reference](API_REFERENCE.md)** - Full API documentation with all methods and options
+- **[Development Guide](DEVELOPMENT.md)** - Building, testing, and developing the extension
+- **[OpenID4VP Documentation](design/OPENID4VP_IMPLEMENTATION.md)** - Comprehensive OpenID4VP protocol guide
+- **[Wallet Management](design/WALLET_MANAGEMENT.md)** - User guide for managing wallets

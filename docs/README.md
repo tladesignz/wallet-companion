@@ -1,35 +1,31 @@
 # Documentation
 
-This directory contains all documentation for the Wallet Companion browser extension.
+This directory contains the active documentation for Wallet Companion.
 
 ## Structure
 
 ```
 docs/
-├── design/                      # Design documents and architecture
-│   ├── PROTOCOL_SUPPORT.md     # Protocol plugin architecture
-│   ├── WALLET_API.md           # Wallet registration API
-│   ├── WALLET_MANAGEMENT.md    # Wallet management features
-│   ├── IMPLEMENTATION.md       # Implementation details
-│   ├── IMPLEMENTATION_SUMMARY.md
-│   └── AUTO_REGISTRATION_SUMMARY.md
-├── BRANDING.md                 # Brand guidelines and assets
-├── BRANDING_UPDATE.md          # Branding update changelog
-├── QUICKSTART.md               # Quick start guide
-├── DEVELOPMENT.md              # Development guide
-├── TESTING.md                  # Testing documentation
-├── CHANGELOG.md                # Version history
-├── MAKEFILE.md                 # Makefile documentation
-├── PROJECT_SUMMARY.md          # Project overview
-└── TEST_RESULTS.md             # Test results and coverage
+├── QUICKSTART.md               # Verifier and wallet quick start
+├── API_REFERENCE.md            # API request/response reference
+├── DEVELOPMENT.md              # Build, test, and packaging workflow
+├── TESTING.md                  # Testing practices and troubleshooting
+├── CHANGELOG.md                # Documentation and project change notes
+├── MAKEFILE.md                 # Make targets reference
+├── BRANDING.md                 # Branding and visual assets
+├── DEVELOPER_MODE.md           # Developer mode behavior and controls
+├── WALLET_INVOCATION.md        # Wallet invocation flow details
+├── browser/                    # Browser-specific notes
+└── design/                     # Architecture and protocol design
 ```
 
 ## Documentation Index
 
 ### Getting Started
 
-- **[QUICKSTART.md](QUICKSTART.md)** - Quick start guide for developers
-- **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development environment setup and workflows
+- **[QUICKSTART.md](QUICKSTART.md)** - Canonical quick start guide for verifiers and wallets
+- **[API_REFERENCE.md](API_REFERENCE.md)** - Canonical API reference
+- **[DEVELOPMENT.md](DEVELOPMENT.md)** - Canonical development setup and workflows
 - **[TESTING.md](TESTING.md)** - Testing guide and best practices
 
 ### Design Documents (`design/`)
@@ -37,21 +33,17 @@ docs/
 - **[PROTOCOL_SUPPORT.md](design/PROTOCOL_SUPPORT.md)** - Protocol-aware business logic, plugin architecture, and W3C Digital Credentials API implementation
 - **[WALLET_API.md](design/WALLET_API.md)** - Wallet registration and communication API
 - **[WALLET_MANAGEMENT.md](design/WALLET_MANAGEMENT.md)** - Wallet management system design
-- **[IMPLEMENTATION.md](design/IMPLEMENTATION.md)** - Detailed implementation notes
-- **[IMPLEMENTATION_SUMMARY.md](design/IMPLEMENTATION_SUMMARY.md)** - Implementation overview
-- **[AUTO_REGISTRATION_SUMMARY.md](design/AUTO_REGISTRATION_SUMMARY.md)** - Auto-registration feature design
 
 ### Brand Guidelines
 
 - **[BRANDING.md](BRANDING.md)** - Complete branding guide including logo usage, color palette, typography, and UI components
-- **[BRANDING_UPDATE.md](BRANDING_UPDATE.md)** - Summary of branding changes and asset generation process
 
 ### Project Information
 
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and release notes
-- **[PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)** - High-level project overview
-- **[TEST_RESULTS.md](TEST_RESULTS.md)** - Test coverage and results
 - **[MAKEFILE.md](MAKEFILE.md)** - Build system documentation
+- **[WALLET_INVOCATION.md](WALLET_INVOCATION.md)** - Wallet invocation behavior
+- **[DEVELOPER_MODE.md](DEVELOPER_MODE.md)** - Developer mode guidance
 
 ## Quick Links
 
@@ -76,10 +68,9 @@ docs/
 
 When adding new documentation:
 
-1. **Design Documents** → Place in `docs/design/`
-2. **User Guides** → Place in `docs/`
-3. **API Documentation** → Consider using JSDoc in code and generating with tools
-4. **Brand Assets** → Store source files in `src/icons/`, document in `docs/BRANDING.md`
+1. **Design Documents**: Place in `docs/design/`
+2. **User/Contributor Guides**: Place in `docs/`
+3. **Brand Assets**: Store source files in `src/icons/`, document in `docs/BRANDING.md`
 
 ### Documentation Standards
 
@@ -92,22 +83,12 @@ When adding new documentation:
 
 ## Generating Documentation
 
-Some documentation is auto-generated from source code:
+Documentation is currently maintained manually. For API and test details, use existing project commands:
 
 ```bash
-# Generate API docs from JSDoc comments (future)
-pnpm docs:api
-
 # Generate test coverage reports
-pnpm test:coverage
-
-# Build all documentation
-pnpm docs:build
+make test-coverage
 ```
-
-## Version History
-
-See [CHANGELOG.md](CHANGELOG.md) for project version history and release notes.
 
 ## License
 

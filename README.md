@@ -1,49 +1,115 @@
 # Wallet Companion
 
-A cross-browser companion extension that intercepts W3C Digital Credentials API calls, enabling users to select from multiple digital identity wallet providers.
+A browser extension that enhances web wallets with standards-based credential flows, auto-registration, and protocol-aware routing.
 
-[![License](https://img.shields.io/badge/License-BSD%202--Clause-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-332%2F332-brightgreen.svg)](DEVELOPMENT.md#testing)
-[![OpenID4VP](https://img.shields.io/badge/OpenID4VP-Full%20Implementation-green.svg)](docs/design/OPENID4VP_IMPLEMENTATION.md)
+![GitHub package.json version](https://img.shields.io/github/package-json/v/sirosfoundation/wallet-companion)
+[![Test](https://github.com/sirosfoundation/wallet-companion/actions/workflows/test.yml/badge.svg)](https://github.com/sirosfoundation/wallet-companion/actions/workflows/test.yml)
+[![Lint](https://github.com/sirosfoundation/wallet-companion/actions/workflows/lint.yml/badge.svg)](https://github.com/sirosfoundation/wallet-companion/actions/workflows/lint.yml)
+[![Security](https://github.com/sirosfoundation/wallet-companion/actions/workflows/security.yml/badge.svg)](https://github.com/sirosfoundation/wallet-companion/actions/workflows/security.yml)
+[![CodeQL](https://github.com/sirosfoundation/wallet-companion/actions/workflows/codeql.yml/badge.svg)](https://github.com/sirosfoundation/wallet-companion/actions/workflows/codeql.yml)
+[![SBOM](https://github.com/sirosfoundation/wallet-companion/actions/workflows/sbom.yml/badge.svg)](https://github.com/sirosfoundation/wallet-companion/actions/workflows/sbom.yml)
 
-## 🎯 What It Does
+## Why?
 
-When a website requests credentials using the W3C Digital Credentials API, this extension:
+Wallet Companion helps web wallets align closely with standards such as the W3C Digital Credentials API while offering practical capabilities that are harder to deliver in browser-only environments. It also improves day-to-day wallet access with the DC API support and sets a clear path for additional transport flows and privacy-focused features as they become available.
 
-1. **Intercepts the request** - Captures `navigator.credentials.get()` calls
-2. **Filters by protocol** - Shows only compatible wallets (OpenID4VP, mDoc, W3C VC)
-3. **Presents wallet choices** - User selects their preferred wallet
-4. **Routes the request** - Sends the credential request to the chosen wallet
-5. **Returns the credential** - Wallet response goes back to the website
+## Features
 
-## ✨ Key Features
+- [Wallet auto-registration API](#wallet-auto-registration-api)
+- [Digital Credentials API support](#digital-credentials-dc-api-support)
+- [Protocol-aware wallet routing](#protocol-aware-wallet-routing)
+- Cross-browser support (Chrome, Firefox, Safari)
 
-- **OpenID4VP Support** - Full implementation with JAR and DCQL
-- **JWT Verification Callbacks** - Wallets provide their own signature verification
-- **Auto-Registration API** - Wallets can register themselves via JavaScript API
-- **Protocol-Aware** - Filters wallets by supported protocols
-- **Cross-Browser** - Works on Chrome, Firefox, and Safari
-- **User-Friendly** - Beautiful modal UI with wallet management
+### Wallet auto-registration API
 
-## 🚀 Quick Start
+Wallets can register themselves with Wallet Companion through `window.WalletCompanion`, so users do not need to manually enter wallet endpoints. Registered wallet metadata and supported protocols are then used for wallet selection and request routing.
+
+Related docs:
+- [docs/API_REFERENCE.md](docs/API_REFERENCE.md)
+- [docs/design/WALLET_API.md](docs/design/WALLET_API.md)
+
+### Digital Credentials (DC) API support
+
+Wallet Companion integrates with `navigator.credentials.get()` and routes eligible requests through compatible wallets. This keeps verifier integration aligned with the standard API surface while giving users a wallet selection step when multiple wallets can satisfy the request.
+
+We support:
+- OpenID4VP request handling for DC API flows.
+- OpenID4VP variants: `openid4vp`, `openid4vp-v1-unsigned`, `openid4vp-v1-signed`, `openid4vp-v1-multisigned`.
+
+Related docs:
+- [docs/QUICKSTART.md](docs/QUICKSTART.md)
+- [docs/API_REFERENCE.md](docs/API_REFERENCE.md)
+
+### Protocol-aware wallet routing
+
+When a request arrives, Wallet Companion filters wallet options by supported protocol and request format before presenting choices to the user. This reduces failed handoffs and keeps routing behavior predictable as new capability modules are added.
+
+Related docs:
+- [docs/design/PROTOCOL_SUPPORT.md](docs/design/PROTOCOL_SUPPORT.md)
+
+## Development Instructions
+
+### Prerequisites
+
+- Node.js 22 or newer
+- pnpm 10.4.0 (invoked by Makefile targets)
+- Chrome, Firefox, or Safari
+
+### Setup
+
+```bash
+# Install dependencies
+make install
+
+# Build for all browsers
+make build
+
+# Build for a specific browser
+make build-chrome
+make build-firefox
+make build-safari
+
+# Watch mode
+make watch-chrome
+```
+
+### Load In Browser
+
+Chrome:
+1. Go to `chrome://extensions/`
+2. Enable Developer mode
+3. Click Load unpacked and select `dist/chrome`
+
+Firefox:
+1. Go to `about:debugging#/runtime/this-firefox`
+2. Click Load Temporary Add-on
+3. Select `dist/firefox/manifest.json`
+
+Safari:
+1. Run `xcrun safari-web-extension-converter dist/safari/ --app-name "Wallet Companion"`
+2. Open the generated Xcode project and run it
+
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for the complete contributor workflow.
+
+## Quick Start
 
 ### For Users
 
-1. **Install the extension** (from your browser's extension store)
-2. **Configure wallets** - Click the extension icon → "Configure Wallets"
-3. **Add wallets** - Use pre-configured wwWallet presets or add custom wallets
-4. **Done!** - Visit any website that requests credentials and select your wallet
+1. Install the extension in your browser.
+2. Open the extension UI and configure wallets.
+3. Visit a site that requests digital credentials.
+4. Select the wallet you want to use.
 
-### For Verifiers (Requesting Credentials)
+### For Verifiers
 
 Use the standard W3C Digital Credentials API:
 
 ```javascript
 const credential = await navigator.credentials.get({
   digital: {
-    providers: [{
+    requests: [{
       protocol: "openid4vp",
-      request: {
+      data: {
         client_id: "https://verifier.example.com",
         response_type: "vp_token",
         dcql_query: {
@@ -59,149 +125,59 @@ const credential = await navigator.credentials.get({
 });
 ```
 
-**[→ See Quick Start Guide](QUICKSTART.md)**
+See [docs/QUICKSTART.md](docs/QUICKSTART.md) for full verifier setup.
 
-### For Wallets (Self-Registration)
+### For Wallets
 
 Register your wallet with the extension:
 
 ```javascript
 if (window.WalletCompanion?.isInstalled) {
   await window.WalletCompanion.registerWallet({
-    name: 'MyWallet',
-    url: 'https://wallet.example.com',
-    protocols: ['openid4vp'],
-    icon: '🔐',
-    color: '#3b82f6'
+    name: "MyWallet",
+    url: "https://wallet.example.com",
+    protocols: ["openid4vp"],
+    color: "#3b82f6"
   });
 }
 ```
 
-**[→ See API Reference](API_REFERENCE.md)**
+See [docs/API_REFERENCE.md](docs/API_REFERENCE.md) for API details.
 
-## 📋 Implementation Status
-
-### ✅ Completed
-
-- W3C Digital Credentials API interception
-- OpenID4VP protocol (JAR, DCQL)
-- JWT verification callback system
-- Wallet auto-registration API
-- Protocol-aware wallet filtering
-- Cross-browser support (Chrome, Firefox, Safari)
-- 332 passing tests
-
-### 🚧 Planned
-
-- mDoc OpenID4VP protocol plugin
-- W3C Verifiable Credentials plugin
-- Response encryption callbacks
-- Additional protocol support
-
-## 📚 Documentation
-
-### Getting Started
-
-- **[Quick Start Guide](QUICKSTART.md)** - Get up and running in minutes
-- **[Wallet Management](WALLET_MANAGEMENT.md)** - Configure and manage wallets
-
-### Developer Documentation
-
-- **[API Reference](API_REFERENCE.md)** - Complete API documentation
-- **[Development Guide](DEVELOPMENT.md)** - Build, test, and develop the extension
-- **[Wallet API Guide](WALLET_API.md)** - Auto-registration API for wallet developers
-
-### Protocol Documentation
-
-- **[OpenID4VP Implementation](docs/design/OPENID4VP_IMPLEMENTATION.md)** - Complete OpenID4VP guide
-- **[OpenID4VP Summary](docs/design/OPENID4VP_SUMMARY.md)** - Executive summary
-- **[JWT Verification Callbacks](docs/design/JWT_VERIFICATION_CALLBACKS.md)** - JWT callback system
-- **[Protocol Support Architecture](docs/design/PROTOCOL_SUPPORT.md)** - Protocol plugin system
-
-### Additional Resources
-
-- **[Branding Guide](docs/BRANDING.md)** - Logo, colors, and UI guidelines
-- **[Auto-Registration](docs/design/AUTO_REGISTRATION_SUMMARY.md)** - Wallet registration system
-
-## 🛠️ Development
-
-### Prerequisites
-
-- Node.js (v14+)
-- npm or yarn
-- Chrome, Firefox, or Safari
-
-### Setup
+## Testing
 
 ```bash
-# Clone and install
-cd /home/leifj/work/siros.org/browser-extensions
-npm install
+# Run unit test suite
+make test
 
-# Build for all browsers
-npm run build
+# Run integration tests
+make test-integration
 
-# Or build for specific browser
-npm run build:chrome
-npm run build:firefox
-npm run build:safari
+# Run e2e tests
+make test-e2e
 
-# Development with auto-rebuild
-npm run watch:chrome
+# Serve test fixtures locally
+make test-server
 ```
 
-### Load in Browser
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#testing) for full testing workflow.
 
-**Chrome:**
-1. Go to `chrome://extensions/`
-2. Enable "Developer mode"
-3. Click "Load unpacked" → Select `chrome/` directory
-
-**Firefox:**
-1. Go to `about:debugging#/runtime/this-firefox`
-2. Click "Load Temporary Add-on" → Select `firefox/manifest.json`
-
-**Safari:**
-1. Convert: `xcrun safari-web-extension-converter safari/`
-2. Open Xcode project and run
-
-**[→ Complete Development Guide](DEVELOPMENT.md)**
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-npm test
-
-# Run specific test suites
-npm test -- tests/openid4vp.test.js
-npm test -- tests/jwt-verification.test.js
-
-# Open interactive test pages
-open test-page.html
-open test-wallet-api.html
-```
-
-**Test Coverage:** 332 tests passing
-
-**[→ Testing Documentation](DEVELOPMENT.md#testing)**
-
-## 📦 Packaging
+## Packaging
 
 ```bash
 # Package for Chrome Web Store
-npm run package:chrome
+make package-chrome
 
 # Package for Firefox Add-ons
-npm run package:firefox
+make package-firefox
 
-# Or use Makefile
+# Or package both with Makefile
 make package
 ```
 
-**[→ Packaging Guide](DEVELOPMENT.md#packaging-for-distribution)**
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#packaging) for release details.
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────┐
@@ -211,7 +187,7 @@ make package
        v
 ┌─────────────────────────────────────┐
 │  Extension (inject.js)              │
-│  - Intercepts DC API calls          │
+│  - Polyfills DC API                 │
 │  - Exposes window.WalletCompanion   │
 └──────┬──────────────────────────────┘
        │
@@ -219,7 +195,7 @@ make package
 ┌─────────────────────────────────────┐
 │  Protocol Plugin (OpenID4VPPlugin)  │
 │  - Parses/validates requests        │
-│  - Handles JAR, DCQL, Pres. Ex.     │
+│  - Handles JAR, DCQL                │
 └──────┬──────────────────────────────┘
        │
        v
@@ -237,25 +213,30 @@ make package
 
 **[→ Protocol Architecture](docs/design/PROTOCOL_SUPPORT.md)**
 
-## 🤝 Contributing
+## Documentation
+
+- [docs/QUICKSTART.md](docs/QUICKSTART.md) - verifier and wallet quickstart
+- [docs/API_REFERENCE.md](docs/API_REFERENCE.md) - extension API details
+- [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) - contributor setup and workflow
+- [docs/design/OPENID4VP_IMPLEMENTATION.md](docs/design/OPENID4VP_IMPLEMENTATION.md) - OpenID4VP implementation details
+- [docs/design/JWT_VERIFICATION_CALLBACKS.md](docs/design/JWT_VERIFICATION_CALLBACKS.md) - JWT callback design
+- [docs/design/PROTOCOL_SUPPORT.md](docs/design/PROTOCOL_SUPPORT.md) - protocol plugin architecture
+- [docs/design/WALLET_MANAGEMENT.md](docs/design/WALLET_MANAGEMENT.md) - wallet management model
+- [docs/design/WALLET_API.md](docs/design/WALLET_API.md) - wallet API design
+
+## Contributing
 
 Contributions welcome! Please:
 
 1. Fork the repository
 2. Create a feature branch
 3. Write tests for new features
-4. Run `npm test` to verify
+4. Run `make test-all` to verify
 5. Submit a pull request
 
-**[→ Development Guide](DEVELOPMENT.md#contributing)**
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#contributing) for contribution workflow.
 
-## 📄 License
-
-BSD 2-Clause License - see [LICENSE](LICENSE) file for details.
-
-Copyright (c) 2025, SIROS Foundation
-
-## 🔗 Resources
+## Resources
 
 - [W3C Digital Credentials API](https://w3c.github.io/digital-credentials/)
 - [OpenID4VP Specification](https://openid.net/specs/openid-4-verifiable-presentations-1_0.html)
@@ -263,12 +244,14 @@ Copyright (c) 2025, SIROS Foundation
 - [Firefox Extensions](https://extensionworkshop.com/)
 - [Safari Web Extensions](https://developer.apple.com/documentation/safariservices/safari_web_extensions)
 
-## 📞 Support
+## Support
 
-- **Issues**: [GitHub Issues](https://github.com/sirosfoundation/web-wallet-selector/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/sirosfoundation/web-wallet-selector/discussions)
-- **Documentation**: See links above
+- Issues: [GitHub Issues](https://github.com/sirosfoundation/wallet-companion/issues)
+- Discussions: [GitHub Discussions](https://github.com/sirosfoundation/wallet-companion/discussions)
+- Documentation: see links above
 
----
+## License
 
-**Made with ❤️ by the SIROS Foundation**
+BSD 2-Clause License - see [LICENSE](LICENSE) file for details.
+
+Copyright (c) 2025 - present, SIROS Foundation

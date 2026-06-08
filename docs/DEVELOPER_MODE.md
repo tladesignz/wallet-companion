@@ -62,7 +62,7 @@ The wwWallet Demo preset (demo.wwwallet.org) comes pre-configured with these pro
 
 When a website uses the Digital Credentials API to request credentials:
 
-1. The extension intercepts the request
+1. The extension handles the request
 2. It extracts the `protocol` field from each credential request
 3. It filters wallets to show only those that have the requested protocol in their `protocols` array
 4. If no wallets match, the request is passed to the browser's native implementation

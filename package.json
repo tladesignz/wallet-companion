@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "author": "SIROS Foundation",
   "license": "BSD-2-Clause",
-  "description": "A cross-browser companion extension that intercepts W3C Digital Credentials API calls, enabling users to select from multiple digital identity wallet providers.",
+  "description": "A browser extension that enhances web wallets with standards-based credential flows, auto-registration, and protocol-aware routing.",
   "main": "index.js",
   "type": "module",
   "scripts": {
