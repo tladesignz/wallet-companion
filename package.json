@@ -4,8 +4,8 @@
   "author": "SIROS Foundation",
   "license": "BSD-2-Clause",
   "description": "A browser extension that enhances web wallets with standards-based credential flows, auto-registration, and protocol-aware routing.",
-  "main": "index.js",
   "type": "module",
+  "private": true,
   "scripts": {
     "watch": "WATCH=true LOG_LEVEL=debug BROWSER=chrome tsx vite.ts",
     "watch:chrome": "WATCH=true LOG_LEVEL=debug BROWSER=chrome tsx vite.ts",
